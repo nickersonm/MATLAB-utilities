@@ -1,4 +1,5 @@
-# InstrumentConnection
+# MATLAB-utilities
+
 Assorted MATLAB utility scripts.
 
 
