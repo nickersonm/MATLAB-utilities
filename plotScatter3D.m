@@ -32,7 +32,7 @@ function plotScatter3D(x, varargin)
     c = accumarray(iDup, c, [], @mean);       % Merge c-values
     
     % Normalize c
-    normC = c*sign(nanmean(c));
+    normC = c*sign(mean(c, "omitnan"));
     if numel(unique(normC)) > 2
         normC = normC-min(normC);
     end

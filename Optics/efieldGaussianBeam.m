@@ -106,7 +106,7 @@ y = sort(y,1);
 
 % Generate grid if needed
 if isscalar(N); N = [N N]; end      % Convert to 2 elements
-N(isnan(N)) = nanmean(N);   % Fill any missing dimensions
+N(isnan(N)) = mean(N, "omitnan");   % Fill any missing dimensions
 if numel(x) == 2
     x = linspace(x(1), x(end), N(1));
 end
