@@ -10,11 +10,14 @@
 % Requirements:
 %   - None
 % 
-% Usage: [Ez, xz, yz] = efieldMeanKernel(x, y, z, Ei[, option, value])
+% Usage: [Ez, xz, yz, Ei, x, y] = efieldMeanKernel(x, y, z, Ei[, option, value])
 %   Returns:
 %     Ez: Complex field INTENSITY matrix at z
 %     xz: x-grid at z
 %     yz: y-grid at z
+%     Ei: utilized input field
+%     x: utilized input x-grid
+%     y: utilized input y-grid
 %
 %   Parameters:
 %     x, y: Input axes: range, vector, or meshgrid
@@ -41,7 +44,7 @@
 %   - Auto-split into reasonably sized subarrays when input exceeds memory
 %   - Implement general EMA (section 2) for arbitrary ABCD transforms?
 
-function [Ez, xz, yz] = efieldMeanKernel(x, y, z, Ei, varargin)
+function [Ez, xz, yz, Ei, x, y] = efieldMeanKernel(x, y, z, Ei, varargin)
 %% Defaults and magic numbers
 figN = NaN;
 N = 0;
