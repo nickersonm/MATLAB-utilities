@@ -101,8 +101,8 @@ end
 Escale = (max(x(:))-min(x(:))) * (max(y(:))-min(y(:)))/numel(Ei);
 
 hfKernel = -1i * exp(1i*k*(x.^2+y.^2+z^2).^0.5) / (lambda*z);  % Huygens or Fresnel-Kirchhoff PSF, partial parabolic approximation
-x = gather([min(x(:)) max(x(:))]);
-y = gather([min(y(:)) max(y(:))]);
+x = [min(x(:)) max(x(:))];
+y = [min(y(:)) max(y(:))];
 
 Ez = fftconv(Ei, hfKernel, 'same') * Escale;
 
@@ -130,10 +130,5 @@ if ~isnan(figN)
     drawnow;
 end
 
-
-%% Return
-x = gather(x);
-y = gather(y);
-Ez = gather(Ez);
 
 end
