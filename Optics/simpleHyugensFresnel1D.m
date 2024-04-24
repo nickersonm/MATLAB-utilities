@@ -18,7 +18,8 @@
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %
 % TODO:
-%   - Demonstrate
+%   x Demonstrate
+%   x Nonuniform input/output size
 
 function [Ez, th, z] = simpleHyugensFresnel1D(x, z, E0, varargin)
 %% Defaults and magic numbers
@@ -77,10 +78,13 @@ end
 if numel(th) == 2
     th = linspace(th(1), th(2), N);
 end
-th = th(:);
+th = th(:)';
 
 x = x - mean(x); x = x(:);
 E0 = E0(:);
+if size(x) ~= size(E0)
+    error("x vector and E0 vector size mismatch!");
+end
 
 z = z(:)';
 
@@ -111,11 +115,11 @@ z = z(:)';
 
 
 %% Basic Hyugens-Fresnel principle
-Ez = NaN(numel(x), numel(z));
+Ez = NaN(numel(th), numel(z));
 
 for i = 1:numel(z)
-    zi = (z(i)^2 * cos(th).^2 + (z(i) * sin(th) - x').^2).^0.5;
-    Ez(:, i) = sum(E0' .* exp(1i*k*zi), 2);
+    zi = (z(i)^2 * cos(th).^2 + (z(i) * sin(th) - x).^2).^0.5;
+    Ez(:, i) = sum(E0 .* exp(1i*k*zi), 1)';
 end
 
 

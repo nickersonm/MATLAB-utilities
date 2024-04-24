@@ -1,34 +1,39 @@
 %% simplePhasedArray.m  MN 2024-04-19
 % Simple 1D simulation of the far field pattern of a phased array
 % 
-% Usage: [Ez, th, x0, E0] = simpleHyugensFresnel1D(x, ph[, option, [value]])
+% Usage: [Ez, th, E0, x0] = simplePhasedArray(x, ph[, option, [value]])
 %   Returns:
 %     Ez: Complex scalar field amplitude vector at z
 %     th: Angle vector corresponding to E values
-%     x0: Constructed near field location vector
 %     E0: Constructed near field
+%     x0: Constructed near field location vector
 %
 %   Parameters:
 %     x: Locations of uniform emitters
 %     ph: scalar dph between emitters or vector exact phase of emitters; can be 2D matrix
 %
 %     Options:
+%       'P', double: Total power of emitters (default 1)
 %       'z', double: Propagation distance from center of input (default 100)
-%       'dx', double: Width of emitters (default gradient(x))
 %       'th', double: Specify output angle vector as bound, span, or grid (default pi)
-%       'N', %i: Simulation linear grid size (default 2^12+1)
+%       'N', %i: Far-field linear grid size (default 2^12+1)
 %       'lambda', %f: Specify wavelength (default 1.55e-6)
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %       'plot', handle: Plot results with specified handle
 %
 % TODO:
-%   - Demonstrate
+%   x Demonstrate
+%   x Normalize input power
+%   - Change output to per-radian
+%   x Nonuniform input/output size
+%   x Don't mesh nearfield - use point emitters
 
-function [Ez, th, x0, E0] = simplePhasedArray(x, ph, varargin)
+function [Ez, th, E0, x0] = simplePhasedArray(x, ph, varargin)
 %% Defaults and magic numbers
 N = 2^12+1;
+P = 1;
 th = pi;
-lambda = 1.55e-6;     k=2*pi/lambda;
+lambda = 1.55e-6;
 z = 100;
 plotH = []; dx = [];
 
@@ -57,6 +62,8 @@ while ~isempty(varargin)
     
     % Look for valid arguments
     switch arg
+        case 'p'
+            P = double(nextarg("P")); P = P(1);
         case 'z'
             z = double(nextarg("z")); z = z(1);
         case 'dx'
@@ -67,9 +74,8 @@ while ~isempty(varargin)
             N = round(nextarg("N"));
         case 'lambda'
             lambda = double(nextarg("lambda"));
-            k=2*pi/lambda;
         case 'k'
-            k = double(nextarg("k"));
+            lambda = 2*pi/double(nextarg("k"));
         case 'plot'
             plotH = nextarg("plot handle");
         otherwise
@@ -79,12 +85,13 @@ while ~isempty(varargin)
     end
 end
 
-% Verify and standardize inputs
+
+%% Verify and standardize inputs
 if numel(th) < 2
     th = [-th/2, th/2];
 end
 if numel(th) == 2
-    th = linspace(th(1), th(2), N);
+    th = linspace(th(1), th(2), N(end));
 end
 th = th(:);
 
@@ -135,23 +142,26 @@ end
 
 
 %% Build input vectors
-x0 = linspace(min(x) - dx(1)/2, max(x) + dx(end)/2, N);
-Ex = ((x0 >= (x-dx/2)) & (x0 <= (x+dx/2)));
+Ex = 0*x + 1;
 
-x0 = x0(:);
-Ex = normalize(sum(Ex,1)', "range");
+% Normalize power
+Ex = Ex * (P / sum(gradient(x) .* abs(Ex).^2, "all"))^0.5;
 
 
 %% Apply phases and compute
-Ez = NaN(numel(th), size(ph,2)); E0 = NaN(N, size(ph,2));
+Ez = NaN(numel(th), size(ph,2)); E0 = NaN(numel(x), size(ph,2));
 
 for i = 1:size(ph,2)
-    dph = sum(((x0' >= (x-dx/2)) & (x0' <= (x+dx/2))) .* ph(:,i), 1)';
-    E0(:,i) = Ex .* exp(1i*dph);
+    E0(:,i) = Ex .* exp(1i*ph(:,i));
     
-    [Ez(:,i), th] = simpleHyugensFresnel1D(x0, z, E0(:,i), ...
-                                           "N", N, "th", th, "lambda", lambda);
+    Ez(:,i) = simpleHyugensFresnel1D(x, z, E0(:,i), "th", th, "lambda", lambda);
 end
+
+% Change units to per radian
+%   TODO
+% disp(sum(gradient(x0) .* abs(Ex).^2, 1));
+Ez = Ez / numel(x);
+% disp(sum(gradient(th) .* abs(Ez).^2, 1));
 
 
 %% Plot
@@ -161,12 +171,12 @@ if ~isempty(plotH)
     h = subplot_tight(1,2,1, mgn);
     set(gca, "Position", gca().Position - [0.02 0 0 0]);
     yyaxis left;
-    plot(x0, abs(E0).^2, "LineWidth", 2); axis padded;
+    plot(x, abs(E0).^2, "x", "LineWidth", 2); axis padded;
     grid on;
     xlabel("Emitter Position [m]");
-    ylabel("Emitter Amplitude [arb]");
+    ylabel("Emitter Amplitude [V/m]");
     yyaxis right;
-    plot(x0, angle(E0)/pi, ":", "LineWidth", 2); axis padded;
+    plot(x, -angle(E0)/pi, "o", "LineWidth", 2); axis padded;
     ylabel("Emitter Phase [\pi rad]");
     title(h, "Near Field", 'FontSize', 14);
     
@@ -176,7 +186,7 @@ if ~isempty(plotH)
     plot(th/pi, abs(Ez).^2, "LineWidth", 2); axis padded;
     grid on;
     xlabel("Far Field Angle [\pi rad]");
-    ylabel("Far Field Amplitude [arb]");
+    ylabel("Far Field Amplitude [V/rad]");
     yyaxis right;
     plot(th/pi, angle(Ez)/pi, ":", "LineWidth", 2); axis padded;
     ylabel("Far Field Phase [\pi rad]");
