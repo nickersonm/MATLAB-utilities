@@ -20,6 +20,7 @@
 %       'lambda', %f: Specify wavelength (default 1.55e-6)
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %       'plot', handle: Plot results with specified handle
+%       'nonorm': Don't normalize the output by the element count
 %
 % TODO:
 %   x Demonstrate
@@ -28,7 +29,7 @@
 %   x Nonuniform input/output size
 %   x Don't mesh nearfield - use point emitters
 
-function [Ez, th, E0, x0] = simplePhasedArray(x, ph, varargin)
+function [Ez, th, E0, x] = simplePhasedArray(x, ph, varargin)
 %% Defaults and magic numbers
 N = 2^12+1;
 P = 1;
@@ -36,6 +37,7 @@ th = pi;
 lambda = 1.55e-6;
 z = 100;
 plotH = []; dx = [];
+nonorm = false;
 
 
 %% Argument parsing
@@ -78,6 +80,8 @@ while ~isempty(varargin)
             lambda = 2*pi/double(nextarg("k"));
         case 'plot'
             plotH = nextarg("plot handle");
+        case 'nonorm'
+            nonorm = true;
         otherwise
             if ~isempty(arg)
                 warning('Unexpected option "%s", ignoring', num2str(arg));
@@ -160,7 +164,7 @@ end
 % Change units to per radian
 %   TODO
 % disp(sum(gradient(x0) .* abs(Ex).^2, 1));
-Ez = Ez / numel(x);
+if ~nonorm; Ez = Ez / numel(x); end
 % disp(sum(gradient(th) .* abs(Ez).^2, 1));
 
 

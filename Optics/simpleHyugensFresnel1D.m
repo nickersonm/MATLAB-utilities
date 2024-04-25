@@ -80,7 +80,7 @@ if numel(th) == 2
 end
 th = th(:)';
 
-x = x - mean(x); x = x(:);
+x = x - mean(x,"all"); x = x(:);
 E0 = E0(:);
 if size(x) ~= size(E0)
     error("x vector and E0 vector size mismatch!");
