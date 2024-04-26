@@ -158,7 +158,7 @@ Ez = NaN(numel(th), size(ph,2)); E0 = NaN(numel(x), size(ph,2));
 for i = 1:size(ph,2)
     E0(:,i) = Ex .* exp(1i*ph(:,i));
     
-    Ez(:,i) = simpleHyugensFresnel1D(x, z, E0(:,i), "th", th, "lambda", lambda);
+    Ez(:,i) = simpleHyugensFresnel1D(x, E0(:,i), "z", z, "th", th, "lambda", lambda);
 end
 
 % Change units to per radian
