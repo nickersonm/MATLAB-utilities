@@ -21,6 +21,7 @@
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %       'plot', handle: Plot results with specified handle
 %       'nonorm': Don't normalize the output by the element count
+%       'nocenter': Don't recenter x vector
 %
 % TODO:
 %   x Demonstrate
@@ -28,6 +29,7 @@
 %   - Change output to per-radian
 %   x Nonuniform input/output size
 %   x Don't mesh nearfield - use point emitters
+%   x Don't recenter input offsets
 
 function [Ez, th, E0, x] = simplePhasedArray(x, ph, varargin)
 %% Defaults and magic numbers
@@ -38,6 +40,7 @@ lambda = 1.55e-6;
 z = 100;
 plotH = []; dx = [];
 nonorm = false;
+nocenter = false;
 
 
 %% Argument parsing
@@ -82,6 +85,8 @@ while ~isempty(varargin)
             plotH = nextarg("plot handle");
         case 'nonorm'
             nonorm = true;
+        case 'nocenter'
+            nocenter = true;
         otherwise
             if ~isempty(arg)
                 warning('Unexpected option "%s", ignoring', num2str(arg));
@@ -99,7 +104,8 @@ if numel(th) == 2
 end
 th = th(:);
 
-x = x - mean(x); x = x(:);
+x = x(:);
+if ~nocenter; x = x - mean(x); end
 
 if isempty(dx)
     dx = gradient(x);
