@@ -13,23 +13,25 @@
 %     ph: scalar dph between emitters or vector exact phase of emitters; can be 2D matrix
 %
 %     Options:
-%       'P', double: Total power of emitters (default 1)
-%       'z', double: Propagation distance from center of input (default 100)
-%       'th', double: Specify output angle vector as bound, span, or grid (default pi)
+%       'P', %f: Total power of emitters (default 1)
+%       'z', %f: Propagation distance from center of input (default 100)
+%       'th', %f: Specify output angle vector as bound, span, or grid (default pi)
 %       'N', %i: Far-field linear grid size (default 2^12+1)
 %       'lambda', %f: Specify wavelength (default 1.55e-6)
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %       'plot', handle: Plot results with specified handle
-%       'nonorm': Don't normalize the output by the element count
 %       'nocenter': Don't recenter x vector
+%       'elementfactor' | 'ef', [%f]: vector of element factor scaling, corresponding to 'th' grid
 %
 % TODO:
 %   x Demonstrate
 %   x Normalize input power
-%   - Change output to per-radian
 %   x Nonuniform input/output size
 %   x Don't mesh nearfield - use point emitters
 %   x Don't recenter input offsets
+%   - Fix normalization (via simpleHuygensFresnel1D)
+%       x Change output to V/rad (via simpleHuygensFresnel1D)
+%   - Element factor (via simpleHuygensFresnel1D)
 
 function [Ez, th, E0, x] = simplePhasedArray(x, ph, varargin)
 %% Defaults and magic numbers
@@ -38,9 +40,10 @@ P = 1;
 th = pi;
 lambda = 1.55e-6;
 z = 100;
-plotH = []; dx = [];
-nonorm = false;
+plotH = [];
 nocenter = false;
+C0 = (2*376.73)^-1; % Siemens; C0 == eps0*c/2
+ef = [];
 
 
 %% Argument parsing
@@ -51,9 +54,6 @@ end
 if isempty(ph) || ~isa(ph, 'double')
     error('Required input "ph" is not a double!');
 end
-
-% Allow passing of cells of options
-varargin = flatten(varargin);
 
 % Accept a struct.option = value structure
 if numel(varargin) > 0 && isstruct(varargin{1})
@@ -71,8 +71,6 @@ while ~isempty(varargin)
             P = double(nextarg("P")); P = P(1);
         case 'z'
             z = double(nextarg("z")); z = z(1);
-        case 'dx'
-            dx = double(nextarg("dx"));
         case 'th'
             th = double(nextarg("Theta")); th = th(:)';
         case 'n'
@@ -83,16 +81,28 @@ while ~isempty(varargin)
             lambda = 2*pi/double(nextarg("k"));
         case 'plot'
             plotH = nextarg("plot handle");
-        case 'nonorm'
-            nonorm = true;
         case 'nocenter'
             nocenter = true;
+        case {"elementfactor", "element", "ef"}
+            ef = double(nextarg("Element factor")); ef = ef(:)';
         otherwise
             if ~isempty(arg)
                 warning('Unexpected option "%s", ignoring', num2str(arg));
             end
     end
 end
+
+
+%% Helper functions, if any
+    % Get the next argument or error
+    function arg = nextarg(strExpected)
+        if isempty(strExpected); strExpected = ''; end
+        if ~isempty(varargin)
+            arg = varargin{1}; varargin(1) = [];
+        else
+            error('Expected next argument "%s", but no more arguments present!', strExpected);
+        end
+    end
 
 
 %% Verify and standardize inputs
@@ -107,14 +117,6 @@ th = th(:);
 x = x(:);
 if ~nocenter; x = x - mean(x); end
 
-if isempty(dx)
-    dx = gradient(x);
-end
-dx = dx(:);
-if numel(dx) > 1 && numel(dx) ~= numel(x)
-    dx = dx(1);
-end
-
 if numel(ph) == 1
     ph = ph * (0:(numel(x)-1))';
 end
@@ -126,36 +128,12 @@ if size(ph,1) ~= numel(x)
 end
 
 
-%% Helper functions, if any
-    % Get the next argument or error
-    function arg = nextarg(strExpected)
-        if isempty(strExpected); strExpected = ''; end
-        if ~isempty(varargin)
-            arg = varargin{1}; varargin(1) = [];
-        else
-            error('Expected next argument "%s", but no more arguments present!', strExpected);
-        end
-    end
-    
-    % Flatten a nested cell
-    function flatCell = flatten(varargin)
-        flatCell = {};
-        for j=1:numel(varargin)
-            if iscell(varargin{j})
-                flatCell = [flatCell flatten(varargin{j}{:})];
-            else
-                flatCell = [flatCell varargin(j)];
-            end
-        end
-        flatCell = flatCell( ~cellfun(@isempty, flatCell) );
-    end
-
-
 %% Build input vectors
 Ex = 0*x + 1;
 
 % Normalize power
-Ex = Ex * (P / sum(gradient(x) .* abs(Ex).^2, "all"))^0.5;
+%   Total power = C0 * sum(abs(Ex).^2)
+Ex = Ex * (P / (C0 * sum(abs(Ex).^2)))^0.5;
 
 
 %% Apply phases and compute
@@ -164,14 +142,14 @@ Ez = NaN(numel(th), size(ph,2)); E0 = NaN(numel(x), size(ph,2));
 for i = 1:size(ph,2)
     E0(:,i) = Ex .* exp(1i*ph(:,i));
     
-    Ez(:,i) = simpleHyugensFresnel1D(x, E0(:,i), "z", z, "th", th, "lambda", lambda);
+    Ez(:,i) = simpleHuygensFresnel1D(x, E0(:,i), "z", z, "th", th, "lambda", lambda, "ef", ef);
 end
 
 % Change units to per radian
 %   TODO
-% disp(sum(gradient(x0) .* abs(Ex).^2, 1));
-if ~nonorm; Ez = Ez / numel(x); end
-% disp(sum(gradient(th) .* abs(Ez).^2, 1));
+% P0 = C0 * sum(abs(Ex).^2)
+% Pz = C0 * trapz(th, abs(Ez).^2)
+
 
 
 %% Plot
@@ -181,7 +159,7 @@ if ~isempty(plotH)
     h = subplot_tight(1,2,1, mgn);
     set(gca, "Position", gca().Position - [0.02 0 0 0]);
     yyaxis left;
-    plot(x, abs(E0).^2, "x", "LineWidth", 2); axis padded;
+    plot(x, abs(E0), "x", "LineWidth", 2); axis padded;
     grid on;
     xlabel("Emitter Position [m]");
     ylabel("Emitter Amplitude [V/m]");
@@ -193,12 +171,12 @@ if ~isempty(plotH)
     h = subplot_tight(1,2,2, mgn);
     set(gca, "Position", gca().Position + [0.02 0 0 0]);
     yyaxis left;
-    plot(th/pi, abs(Ez).^2, "LineWidth", 2); axis padded;
+    plot(th/pi, abs(Ez), "LineWidth", 2); axis padded;
     grid on;
     xlabel("Far Field Angle [\pi rad]");
     ylabel("Far Field Amplitude [V/rad]");
     yyaxis right;
-    plot(th/pi, angle(Ez)/pi, ":", "LineWidth", 2); axis padded;
+    plot(th/pi, angle(Ez)/pi, ":", "LineWidth", 1); axis padded;
     ylabel("Far Field Phase [\pi rad]");
     title(h, "Far Field", 'FontSize', 14);
     
