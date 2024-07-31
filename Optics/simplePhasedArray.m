@@ -29,9 +29,10 @@
 %   x Nonuniform input/output size
 %   x Don't mesh nearfield - use point emitters
 %   x Don't recenter input offsets
-%   - Fix normalization (via simpleHuygensFresnel1D)
-%       x Change output to V/rad (via simpleHuygensFresnel1D)
-%   - Element factor (via simpleHuygensFresnel1D)
+%   x Change output to V/rad (via simpleHuygensFresnel1D)
+%   x Element factor (via simpleHuygensFresnel1D)
+%   x Fix normalization: simply normalize to total 2pi emission
+%       - TBD: real physical normalization?
 
 function [Ez, th, E0, x] = simplePhasedArray(x, ph, varargin)
 %% Defaults and magic numbers
@@ -40,10 +41,10 @@ P = 1;
 th = pi;
 lambda = 1.55e-6;
 z = 100;
-plotH = [];
+plotH = NaN;
 nocenter = false;
 C0 = (2*376.73)^-1; % Siemens; C0 == eps0*c/2
-ef = [];
+ef = NaN;
 
 
 %% Argument parsing
@@ -134,6 +135,7 @@ Ex = 0*x + 1;
 % Normalize power
 %   Total power = C0 * sum(abs(Ex).^2)
 Ex = Ex * (P / (C0 * sum(abs(Ex).^2)))^0.5;
+P0 = C0 * sum(abs(Ex).^2);
 
 
 %% Apply phases and compute
@@ -143,17 +145,26 @@ for i = 1:size(ph,2)
     E0(:,i) = Ex .* exp(1i*ph(:,i));
     
     Ez(:,i) = simpleHuygensFresnel1D(x, E0(:,i), "z", z, "th", th, "lambda", lambda, "ef", ef);
+    
+    % Normalize by comparing to entire 2pi emission
+    th2 = linspace(-pi, pi, ceil(2*pi/mean(diff(th))));
+    if ~any(isnan(ef))
+        ef2 = interp1(th, ef, th2, "linear", 0);
+    else
+        ef2 = ef;
+    end
+    [Ez0, th0] = simpleHuygensFresnel1D(x, E0(:,i), "z", z, "th", th2, "lambda", lambda, "ef", ef2);
+    Pz0 = C0 * trapz(th0, abs(Ez0).^2);
+    Ez(:,i) = Ez(:,i) * (P / Pz0)^0.5;
 end
 
-% Change units to per radian
-%   TODO
-% P0 = C0 * sum(abs(Ex).^2)
-% Pz = C0 * trapz(th, abs(Ez).^2)
+% Pz = C0 * trapz(th, abs(Ez).^2);
+% fprintf("Pz/P0 = %.4g / %.4g = %.4f\n", Pz, P0, Pz/P0);
 
 
 
 %% Plot
-if ~isempty(plotH)
+if ~isempty(plotH) && ~any(isnan(plotH))
     figureSize(plotH, 1200, 500); clf;
     mgn = [0.12, 0.08];
     h = subplot_tight(1,2,1, mgn);

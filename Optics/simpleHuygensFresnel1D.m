@@ -13,7 +13,7 @@
 %     Options:
 %       'z', %f: propagation distance (default 100)
 %       'th', %f: Specify output angle vector, either as grid, bounds, or span (default pi)
-%       'N', %i: Generate grid via linspace(min(th),max(th),N) if numel(th)<3 (default 2^12+1)
+%       'N', %i: Generate grid via linspace(min(th),max(th),N) if numel(th)<3 (default 2^12)
 %       'lambda', %f: Specify wavelength (default 1.55e-6)
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %       'reverse': Treat inputs as far-field plane and outputs as nearfield
@@ -23,19 +23,19 @@
 %   x Demonstrate
 %   x Nonuniform input/output size
 %   x Reversed operation
-%   - Fix normalization
-%       x Removed multiple-z capability
-%       x Change output to V/rad
-%   - Element factor
+%   x Removed multiple-z capability
+%   x Change output to V/rad
+%   x Element factor
+%   - Fix normalization: TBD
 
 function [Ez, th, E0, x, ef] = simpleHuygensFresnel1D(x, E0, varargin)
 %% Defaults and magic numbers
 z = 100;
-N = 2^12+1;
+N = NaN;
 th = pi;
 lambda = 1.55e-6;     k=2*pi/lambda;
 reverse = false;
-ef = [];
+ef = NaN;
 C0 = (2*376.73)^-1; % Siemens; C0 == eps0*c/2
 
 
@@ -77,6 +77,7 @@ while ~isempty(varargin)
             reverse = true;
         case {"elementfactor", "element", "ef"}
             ef = double(nextarg("Element factor")); ef = ef(:)';
+            if isnan(N); N = numel(ef); end
         otherwise
             if ~isempty(arg)
                 warning('Unexpected option "%s", ignoring', num2str(arg));
@@ -98,6 +99,8 @@ end
 
 
 %% Verify and standardize inputs
+if isnan(N); N = 2^12; end
+
 if numel(th) < 2
     th = [-th/2, th/2];
 end
@@ -119,13 +122,13 @@ if reverse; [x, th] = deal(th, x); end
 elementFactor = gradient(th) / mean(gradient(th));
 
 % TBD: Apply nonuniform element factor if specified
-if ~isempty(ef)
+if ~any(isnan(ef))
     if numel(elementFactor) == numel(ef)
         % Normalize such that the integral is unity
-        figure(2); plot(th, ef); hold on;
+%         figure(2); plot(th, ef); hold on;
         ef = ef .* trapz(th/2/pi, ef.^2)^-0.5;
-        plot(th, ef); hold off; grid on;
-        legend(["Original", "Normalized"]);
+%         plot(th, ef); hold off; grid on;
+%         legend(["Original", "Normalized"]);
         
         % Apply
         elementFactor = elementFactor .* ef;
@@ -149,9 +152,9 @@ if reverse; [x, th] = deal(th, x); end
 Ez = Ez * z / 2;    % Change to V/rad instead of V/m, including integration over 
                     %   the other angular dimension (4π steradian -> 2π rad)
 
-P0 = C0*sum(abs(E0).^2);
-Pz = C0*trapz(th, abs(Ez).^2);
-fprintf("Pz/P0 = %.4g / %.4g = %.4f\n", Pz, P0, Pz/P0);
+% P0 = C0*sum(abs(E0).^2);
+% Pz = C0*trapz(th, abs(Ez).^2);
+% fprintf("Pz/P0 = %.4g / %.4g = %.4f\n", Pz, P0, Pz/P0);
 
 
 end
