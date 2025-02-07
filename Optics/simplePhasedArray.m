@@ -22,6 +22,7 @@
 %       'plot', handle: Plot results with specified handle
 %       'nocenter': Don't recenter x vector
 %       'elementfactor' | 'ef', [%f]: vector of element factor scaling, corresponding to 'th' grid
+%       'nonorm': Don't normalize
 %
 % TODO:
 %   x Demonstrate
@@ -45,6 +46,7 @@ plotH = NaN;
 nocenter = false;
 C0 = (2*376.73)^-1; % Siemens; C0 == eps0*c/2
 ef = NaN;
+nonorm = false;
 
 
 %% Argument parsing
@@ -86,6 +88,8 @@ while ~isempty(varargin)
             nocenter = true;
         case {"elementfactor", "element", "ef"}
             ef = double(nextarg("Element factor")); ef = ef(:)';
+        case {"nonorm", "skipnorm"}
+            nonorm = true;
         otherwise
             if ~isempty(arg)
                 warning('Unexpected option "%s", ignoring', num2str(arg));
@@ -147,15 +151,18 @@ for i = 1:size(ph,2)
     Ez(:,i) = simpleHuygensFresnel1D(x, E0(:,i), "z", z, "th", th, "lambda", lambda, "ef", ef);
     
     % Normalize by comparing to entire 2pi emission
-    th2 = linspace(-pi, pi, ceil(2*pi/mean(diff(th))));
-    if ~any(isnan(ef))
-        ef2 = interp1(th, ef, th2, "linear", 0);
-    else
-        ef2 = ef;
+    if ~nonorm
+        warning("Normalizing");
+        th2 = linspace(-pi, pi, ceil(2*pi/mean(diff(th))));
+        if ~any(isnan(ef))
+            ef2 = interp1(th, ef, th2, "linear", 0);
+        else
+            ef2 = ef;
+        end
+        [Ez0, th0] = simpleHuygensFresnel1D(x, E0(:,i), "z", z, "th", th2, "lambda", lambda, "ef", ef2);
+        Pz0 = C0 * trapz(th0, abs(Ez0).^2);
+        Ez(:,i) = Ez(:,i) * (P / Pz0)^0.5;
     end
-    [Ez0, th0] = simpleHuygensFresnel1D(x, E0(:,i), "z", z, "th", th2, "lambda", lambda, "ef", ef2);
-    Pz0 = C0 * trapz(th0, abs(Ez0).^2);
-    Ez(:,i) = Ez(:,i) * (P / Pz0)^0.5;
 end
 
 % Pz = C0 * trapz(th, abs(Ez).^2);
