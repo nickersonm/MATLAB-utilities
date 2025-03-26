@@ -27,18 +27,20 @@
 %
 %     Options:
 %       'plot', %i: Plot abs(E)^2 and angle(E) in specified figure
-%       'plotphase', 0: Don't plot phase
+%       'nophase': Don't plot phase
 %       'N', %i: Output grid size; accepts 2 dimensions for nonuniform grid
 %       'lambda', %f: Specify wavelength (default 1.5e-6)
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %       'xout' | 'x2' | 'xz', [%f]: Specify Ez x axis; range, vector, or meshgrid
 %       'yout' | 'y2' | 'yz', [%f]: Specify Ez y axis; range, vector, or meshgrid
-%       'valcheck', 1: Reverse-propagate to recover original Ei as well
-%           (requires plot to be useful)
+%       'valcheck': Reverse-propagate to recover original Ei as well (requires plot to be useful)
 %
 % TODO:
 %   x Custom output grid
 %   x Nonuniform grid
+%   x Allow 1D inputs
+%       x Allow 1D z-coordinate inputs
+%   x Modernize input handling
 %   - Speed up
 %   - Fix field vs. intensity confusion
 %   - Auto-split into reasonably sized subarrays when input exceeds memory
@@ -50,44 +52,64 @@ figN = NaN;
 N = 0;
 lambda = 1.5e-6;     k=2*pi/lambda;
 xz = []; yz = [];
-valcheck = 0;
+valcheck = false;
 plotphase = 1;
+collapseD = NaN;
+collapseDz = NaN;
 
 
 %% Argument parsing
+% Check required inputs
+if isempty(x) || ~isa(x, 'double')
+    error('Required input "x" is not a double!');
+end
+if isempty(y) || ~isa(y, 'double')
+    error('Required input "y" is not a double!');
+end
+if isempty(z) || ~isa(z, 'double')
+    error('Required input "z" is not a double!');
+end
+if isempty(Ei) || ~isa(Ei, 'double')
+    error('Required input "Ei" is not a double!');
+end
+if ~all(size(Ei) == [numel(y), numel(x)])
+    error('Required input "Ei" does not match "x" and "y" size!');
+end
+
 % Accept a struct.option = value structure
 if numel(varargin) > 0 && isstruct(varargin{1})
     paramStruct = varargin{1}; varargin(1) = [];
     varargin = [reshape([fieldnames(paramStruct) struct2cell(paramStruct)]', 1, []), varargin];
 end
 
-if mod(numel(varargin),2)   % I always use "'flag', value" even for boolean commands
-    error('Odd number of optional inputs!');
-end
-% Optional alterations
-for i = 1:2:length(varargin)
-    arg = lower(varargin{i});
-    argval = varargin{i+1};
+% Parameter parsing
+while ~isempty(varargin)
+    arg = lower(varargin{1}); varargin(1) = [];
+    
+    % Look for valid arguments
     switch arg
         case {'plot', 'figure', 'fig'}
-            if argval > 0
-                figN = round(argval);
-            end
-        case {'plotphase', 'phase'}
-            plotphase = argval;
+            figN = round(nextarg("figure handle"));
+            if figN <= 0; figN = NaN; end
+        case {'noplotphase', 'nophase'}
+            plotphase = 0;
         case 'n'
-            N = reshape(round(argval), 1, []);
+            N = reshape(round(nextarg("simulation resolution [Ny Nx]")), 1, []);
         case 'lambda'
-            lambda = double(argval);
+            lambda = double(nextarg("wavelength"));
             k=2*pi/lambda;
         case 'k'
-            k = double(argval);
+            k = double(nextarg("wavevector"));
         case {'xout', 'x2', 'xz', 'xf'}
-            xz = double(argval);
+            xz = double(nextarg("Ez x-axis"));
         case {'yout', 'y2', 'yz', 'yf'}
-            yz = double(argval);
+            yz = double(nextarg("Ez y-axis"));
         case 'valcheck'
-            valcheck = argval > 0;
+            valcheck = true;
+        otherwise
+            if ~isempty(arg)
+                warning('Unexpected option "%s", ignoring', num2str(arg));
+            end
     end
 end
 
@@ -114,6 +136,16 @@ end
         
         x = double(x);
     end
+    
+    % Get the next argument or error
+    function arg = nextarg(strExpected)
+        if isempty(strExpected); strExpected = ''; end
+        if ~isempty(varargin)
+            arg = varargin{1}; varargin(1) = [];
+        else
+            error('Expected next argument "%s", but no more arguments present!', strExpected);
+        end
+    end
 
 
 %% Verify and standardize inputs
@@ -121,22 +153,34 @@ end
 x = stdgrid(x, 2, size(Ei));
 y = stdgrid(y, 1, size(Ei));
 
-% If Ei is too small, add a buffer and regenerate xy
-if any(size(Ei) <= 3)
-    E0 = zeros(size(Ei)+4);
-    x = x*size(E0,1)/size(Ei,1)/2.0;    % Rescale to new boundaries
-    y = y*size(E0,1)/size(Ei,1)/2.0;    % Rescale to new boundaries
-    
-    E0(3:end-2,3:end-2) = Ei;  Ei = E0;     % Inelegant
-    x = stdgrid(x, 2, size(Ei));
-    y = stdgrid(y, 1, size(Ei));
+% Handle 1D input case
+if all(size(Ei) == 1)
+    error("Both inputs are 1D; aborting.");
+elseif any(size(Ei) == 1)
+    [Ei, x, y, collapseD] = handleField1D(x, y, Ei);
 end
+
+% % If Ei is too small, add a buffer and regenerate xy
+% if any(size(Ei) <= 3)
+%     E0 = zeros(size(Ei) + (size(Ei) <= 3)*4);
+%     x = x*size(E0,2)/size(Ei,2);    % Rescale to new boundaries
+%     y = y*size(E0,1)/size(Ei,1);    % Rescale to new boundaries
+%     
+%     E0(3:end-2,3:end-2) = Ei;  Ei = E0;     % Inelegant
+%     x = stdgrid(x, 2, size(Ei));
+%     y = stdgrid(y, 1, size(Ei));
+% end
 
 % Standardize output grid orientation and range
 if isvector(xz); xz = reshape(xz, 1, []); end   % Correct orientation
 if isvector(yz); yz = reshape(yz, [], 1); end
 if isempty(xz); xz = [min(x(:)) max(x(:))]; end % Use input range if not specified
 if isempty(yz); yz = [min(y(:)) max(y(:))]; end
+
+% Handle 1D z-plane grid
+if numel(xz) == 1 || numel(yz) == 1
+    [~, xz, yz, collapseDz] = handleField1D(xz, yz, ones(numel(yz), numel(xz)));
+end
 
 % Check output grid size
 if isscalar(N); N = [N N]; end      % Convert to 2 elements
@@ -148,7 +192,6 @@ N = size(Ei) .* (N==0) + N;                 % Use input size as fallback
 % Standardize or generate output grid
 xz = stdgrid(xz, 2, N);
 yz = stdgrid(yz, 1, N);
-
 
 %% Run calculations
 H0 = sqrt(exp(1i*k*z)/(1i*lambda*z));
@@ -174,7 +217,7 @@ Hy = H0 * dysq.^0.5 .* exp( (1i*pi/(lambda)) * y2y1sqz ) .* sinc( (z*y2y1sqz.*dy
 Ez = transpose(Hy) * Ei * Hx;   % Note: ' is conjugate transpose!
 
 % Validity check
-if valcheck == 1
+if valcheck
     % TODO: This doesn't scale properly due to field vs intensity mismatch;
     % should eventually figure out solution!
 %     Ei = Ei - conj(Hy) * Ez * Hx';
@@ -209,6 +252,13 @@ if ~isnan(figN)
     
     sgtitle(sprintf('Mean-Kernel Propagation; z = %.4g', z), 'FontSize', 16, 'FontWeight', 'bold');
     drawnow;
+end
+
+
+%% Collapse any expanded dimension
+if ~isnan(collapseD)
+    [Ei, x, y] = handleField1D(x, y, Ei, "dim", collapseD);
+    [Ez, xz, yz] = handleField1D(xz, yz, Ez, "dim", collapseDz);
 end
 
 
