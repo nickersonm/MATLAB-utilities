@@ -12,9 +12,9 @@ nTx     = 128;
 dx      = 1.5e-6;
 x = (1:nTx) * dx; x = x(:) - mean(x);
 
-steer = 0*pi/180;
+steer = 10*pi/180;
 th = steer + [-1 1] * 8*lambda/nTx/dx; th = linspace(min(th), max(th), N);
-ph = cumsum(ones(size(x)) * 2*pi*dx/lambda * sin(steer));
+ph = 2*pi*x/lambda * sin(steer);
 E0 = ones(size(x)) .* exp(1i*ph) / numel(x).^2; % Uniform emission
 
 
@@ -54,6 +54,6 @@ ylabel("Intensity [dB]");
 legend(ll, "Location", "s");
 title(h, "Backward", "FontSize", 14);
 
-figure(2); clf;
-plot(xFF, angle(E0FF), "LineWidth", 2); hold on;
-plot(xHF, angle(E0HF), "LineWidth", 2); hold off;
+% figure(2); clf;
+% plot(xFF, angle(E0FF), "LineWidth", 2); hold on;
+% plot(xHF, angle(E0HF), "LineWidth", 2); hold off;

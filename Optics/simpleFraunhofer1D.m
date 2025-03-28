@@ -1,7 +1,7 @@
 %% simpleFraunhofer1D.m  MN 2024-04-26
 % Simple 1D simulation of the far field pattern of a linear source
 % 
-% Usage: [Ez, th] = simpleFraunhofer1D(x, E0[, option, [value]])
+% Usage: [Ez, th, E0, x] = simpleFraunhofer1D(x, E0[, option, [value]])
 %   Returns:
 %     Ez: Complex scalar field amplitude vector at z
 %     th: Angle vector corresponding to E values
@@ -16,11 +16,14 @@
 %       'lambda', %f: Specify wavelength (default 1.55e-6)
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %       'reverse': Treat inputs as far-field plane and outputs as nearfield
+%       'elementfactor' | 'ef', [%f]: vector of element factor scaling, corresponding to 'th' grid
 %
 % TODO:
 %   x Demonstrate
-%   - Compare to HF method
-%   - Implement 'reverse' and verify
+%   x Compare to HF method
+%   x Implement 'reverse' and verify
+%   x Element factor
+%   - Normalization: not quite correct, can't figure out
 
 function [Ez, th, E0, x] = simpleFraunhofer1D(x, E0, varargin)
 %% Defaults and magic numbers
@@ -28,6 +31,8 @@ N = 2^12;
 th = NaN;
 lambda = 1.55e-6;
 reverse = false;
+ef = NaN;
+resample = false;
 
 
 %% Argument parsing
@@ -48,6 +53,7 @@ end
 % Parameter parsing
 while ~isempty(varargin)
     arg = lower(varargin{1}); varargin(1) = [];
+    if isempty(arg); continue; end
     
     % Look for valid arguments
     switch arg
@@ -61,6 +67,9 @@ while ~isempty(varargin)
             lambda = 2*pi/double(nextarg("k"));
         case {"reverse", "inverse"}
             reverse = true;
+        case {"elementfactor", "element", "ef"}
+            ef = double(nextarg("Element factor")); ef = ef(:)';
+            if isnan(N); N = numel(ef); end
         otherwise
             if ~isempty(arg)
                 warning('Unexpected option "%s", ignoring', num2str(arg));
@@ -111,9 +120,12 @@ thMax = asin(lambda / dx / 2);
 
 if any(isnan(th)) || (max(th) == thMax && min(th) == thMax && numel(th) == N)
     upN = 1;
-else
+elseif thMax > max(abs(th))
     upN = max([1 ceil(thMax / max(abs(th)))]);
     if upN > 1; upN = 2*upN; end    % Oversampled for later interpolation
+else
+    upN = 1;
+    resample = true;    % Only looking at a subset of the desired angle here; resample for return
 end
 
 % Assemble far field coordinates; v = sin(th)/lambda
@@ -122,18 +134,35 @@ thF = asin(lambda * linspace(-0.5,0.5,N*upN) / dx)';
 % Edge-pad the near field for FFT
 E0 = [zeros(ceil((N*upN - numel(E0))/2), 1); E0; zeros(floor((N*upN - numel(E0))/2), 1)];
 
-% Propagate: just an FFT
-if ~reverse
-    Ez = ifftshift(fft(fftshift(E0), N*upN));
-else
-    Ez = fftshift(ifft(ifftshift(E0), N*upN))*N*upN;
+% Generate uniform-emission element factor
+elementFactor = gradient(thF) / mean(gradient(thF));
+
+% Apply nonuniform element factor if specified
+if ~any(isnan(ef))
+    if numel(elementFactor) == numel(ef)
+        % Apply with correct shape
+        elementFactor = elementFactor .* interp1(th, ef, thF, "linear", 0);
+    else
+        error("Element factor specified with length %i, but mismatch with length %i `th`", numel(elementFactor), numel(ef));
+    end
 end
 
+% Normalize such that the integral is unity
+elementFactor = elementFactor .* trapz(thF/2/pi, elementFactor.^2)^-0.5;
+
+% Propagate: just an FFT
+if ~reverse
+    Ez = elementFactor .* ifftshift(fft(fftshift(E0), N*upN)) / dx^0.5;
+else
+    Ez = fftshift(ifft(ifftshift(elementFactor .* E0), N*upN))*N*upN / dx^0.5;
+end
+% figure(3); plotyy(thF, abs(Ez), thF, angle(Ez)); axis tight; drawnow;
+
 % Resample to desired size
-if upN == 1
+if upN == 1 && ~resample
     th = thF;
 else
-    Ez = interp1(thF, Ez, th, "linear");
+    Ez = interp1(thF, Ez, th, "linear", 0);
 end
 
 

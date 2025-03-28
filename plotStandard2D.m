@@ -98,6 +98,7 @@ varargin = flatten(varargin);
 % Parameter parsing
 while ~isempty(varargin)
     arg = lower(varargin{1}); varargin(1) = [];
+    if isempty(arg); continue; end
     
     % Check if argument is additional data
     if isnumeric(arg) && (length(arg) > 1)

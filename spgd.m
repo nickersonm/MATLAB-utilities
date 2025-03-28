@@ -66,6 +66,7 @@ end
 % Parameter parsing
 while ~isempty(varargin)
     arg = lower(varargin{1}); varargin(1) = [];
+    if isempty(arg); continue; end
     
     % Look for valid arguments
     switch arg

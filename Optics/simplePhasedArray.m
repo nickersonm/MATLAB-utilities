@@ -22,7 +22,8 @@
 %       'plot', handle: Plot results with specified handle
 %       'nocenter': Don't recenter x vector
 %       'elementfactor' | 'ef', [%f]: vector of element factor scaling, corresponding to 'th' grid
-%       'nonorm': Don't normalize
+%       'norm': Normalize output by comparing to entire 2pi emission
+%       'fft' | 'fraunhofer': Use Fraunhofer propagation (FFT) instead of Huygens-Fresnel; ignores z
 %
 % TODO:
 %   x Demonstrate
@@ -34,6 +35,7 @@
 %   x Element factor (via simpleHuygensFresnel1D)
 %   x Fix normalization: simply normalize to total 2pi emission
 %       - TBD: real physical normalization?
+%   x Add simpleFaunhofer1D option ("fft") => normalization is different
 
 function [Ez, th, E0, x] = simplePhasedArray(x, ph, varargin)
 %% Defaults and magic numbers
@@ -46,7 +48,8 @@ plotH = NaN;
 nocenter = false;
 C0 = (2*376.73)^-1; % Siemens; C0 == eps0*c/2
 ef = NaN;
-nonorm = false;
+norm = false;
+fraunhofer = false;
 
 
 %% Argument parsing
@@ -67,6 +70,7 @@ end
 % Parameter parsing
 while ~isempty(varargin)
     arg = lower(varargin{1}); varargin(1) = [];
+    if isempty(arg); continue; end
     
     % Look for valid arguments
     switch arg
@@ -88,8 +92,10 @@ while ~isempty(varargin)
             nocenter = true;
         case {"elementfactor", "element", "ef"}
             ef = double(nextarg("Element factor")); ef = ef(:)';
-        case {"nonorm", "skipnorm"}
-            nonorm = true;
+        case {"norm", "normalize"}
+            norm = true;
+        case {"fft", "fraunhofer"}
+            fraunhofer = true;
         otherwise
             if ~isempty(arg)
                 warning('Unexpected option "%s", ignoring', num2str(arg));
@@ -132,6 +138,13 @@ if size(ph,1) ~= numel(x)
     error("Mismatch between 'x' and 'ph' input sizes");
 end
 
+% Propagation function
+if fraunhofer
+    prop1D = @(E0, th, ef) simpleFraunhofer1D(x, E0, "th", th, "ef", ef, "lambda", lambda);
+else
+    prop1D = @(E0, th, ef) simpleHuygensFresnel1D(x, E0, "th", th, "ef", ef, "z", z, "lambda", lambda);
+end
+
 
 %% Build input vectors
 Ex = 0*x + 1;
@@ -139,7 +152,6 @@ Ex = 0*x + 1;
 % Normalize power
 %   Total power = C0 * sum(abs(Ex).^2)
 Ex = Ex * (P / (C0 * sum(abs(Ex).^2)))^0.5;
-P0 = C0 * sum(abs(Ex).^2);
 
 
 %% Apply phases and compute
@@ -148,30 +160,26 @@ Ez = NaN(numel(th), size(ph,2)); E0 = NaN(numel(x), size(ph,2));
 for i = 1:size(ph,2)
     E0(:,i) = Ex .* exp(1i*ph(:,i));
     
-    Ez(:,i) = simpleHuygensFresnel1D(x, E0(:,i), "z", z, "th", th, "lambda", lambda, "ef", ef);
+    Ez(:,i) = prop1D(E0(:,i), th, ef);
     
-    % Normalize by comparing to entire 2pi emission
-    if ~nonorm
-        warning("Normalizing");
-        th2 = linspace(-pi, pi, ceil(2*pi/mean(diff(th))));
-        if numel(th2)*numel(E0) > 2^15^2
-            warning("Normalization impractical at this 'th' resolution; skipping.");
-        else
+    if norm
+            warning("Normalizing");
+            % Normalize by comparing to entire 2pi emission
+            th2 = linspace(-pi, pi, ceil(2*pi/mean(diff(th))));
             if ~any(isnan(ef))
                 ef2 = interp1(th, ef, th2, "linear", 0);
             else
                 ef2 = ef;
             end
-            [Ez0, th0] = simpleHuygensFresnel1D(x, E0(:,i), "z", z, "th", th2, "lambda", lambda, "ef", ef2);
+            [Ez0, th0] = prop1D(E0(:,i), th2, ef2);
             Pz0 = C0 * trapz(th0, abs(Ez0).^2);
             Ez(:,i) = Ez(:,i) * (P / Pz0)^0.5;
-        end
     end
 end
 
+% P0 = C0 * sum(abs(Ex).^2);
 % Pz = C0 * trapz(th, abs(Ez).^2);
 % fprintf("Pz/P0 = %.4g / %.4g = %.4f\n", Pz, P0, Pz/P0);
-
 
 
 %% Plot

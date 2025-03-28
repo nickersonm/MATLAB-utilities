@@ -26,7 +26,8 @@
 %   x Removed multiple-z capability
 %   x Change output to V/rad
 %   x Element factor
-%   - Fix normalization: TBD
+%   x Fix normalization: seems correct
+%   x Break up overly large simulations
 
 function [Ez, th, E0, x, ef] = simpleHuygensFresnel1D(x, E0, varargin)
 %% Defaults and magic numbers
@@ -36,7 +37,6 @@ th = pi;
 lambda = 1.55e-6;     k=2*pi/lambda;
 reverse = false;
 ef = NaN;
-C0 = (2*376.73)^-1; % Siemens; C0 == eps0*c/2
 
 
 %% Argument parsing
@@ -57,6 +57,7 @@ end
 % Parameter parsing
 while ~isempty(varargin)
     arg = lower(varargin{1}); varargin(1) = [];
+    if isempty(arg); continue; end
     
     % Look for valid arguments
     switch arg
@@ -121,29 +122,43 @@ if reverse; [x, th] = deal(th, x); end
 % Generate uniform-emission element factor
 elementFactor = gradient(th) / mean(gradient(th));
 
-% TBD: Apply nonuniform element factor if specified
+% Apply nonuniform element factor if specified
 if ~any(isnan(ef))
     if numel(elementFactor) == numel(ef)
-        % Normalize such that the integral is unity
-%         figure(2); plot(th, ef); hold on;
-        ef = ef .* trapz(th/2/pi, ef.^2)^-0.5;
-%         plot(th, ef); hold off; grid on;
-%         legend(["Original", "Normalized"]);
-        
-        % Apply
-        elementFactor = elementFactor .* ef;
+        % Apply with correct shape
+        elementFactor = elementFactor .* reshape(ef, size(elementFactor));
     else
         error("Element factor specified with length %i, but mismatch with length %i `th`", numel(elementFactor), numel(ef));
     end
 end
 
+% Normalize such that the integral is unity
+elementFactor = elementFactor .* trapz(th/2/pi, elementFactor.^2)^-0.5;
+
 
 %% Basic Huygens-Fresnel principle propagation
-%   Far field is the surface of a circle at z distance from origin
-% rho = sqrt((z^2 * cos(th).^2 + (z * sin(th) - x).^2));    % Straightforward form
-rho = sqrt(x.^2 + z.^2 - 2*x.*z.*sin(th));  % Numerically simpler form
-hfKernel = exp(-1i*k*rho) ./ rho; % Huygens-Fresnel propagation kernel
-Ez = sqrt(1i/lambda) * sum(E0 .* hfKernel .* elementFactor, 1);
+% Break down by `th` block as necessary
+blockN = numel(th);
+doubleBytes = 8;
+maxSize = memory().MaxPossibleArrayBytes/doubleBytes;
+if maxSize < 8 * numel(E0)*blockN
+    blockN = ceil(maxSize / 10 / numel(E0));
+end
+blocks = 1:numel(th); blocks((end+1):(end+blockN-rem(numel(th), blockN))) = NaN; blocks = reshape(blocks, blockN, []);
+
+% Preallocate
+Ez = sparse(numel(th),1);
+
+% Process blocks as needed
+for ii = blocks
+    ii = ii(~isnan(ii));
+    %   Far field is the surface of a circle at z distance from origin
+    % rho = sqrt((z^2 * cos(th).^2 + (z * sin(th) - x).^2));    % Straightforward form
+    rho = sqrt(x.^2 + z.^2 - 2*x.*z.*sin(th(ii)));  % Numerically simpler form
+    hfKernel = exp(1i*k*rho) ./ rho; % Huygens-Fresnel propagation kernel
+    Ez(ii) = sqrt(1i/lambda) * sum(E0 .* hfKernel .* elementFactor(ii), 1);
+end
+Ez = gather(Ez);
 
 % Restore output variables for reversed simulation
 if reverse; [x, th] = deal(th, x); end
