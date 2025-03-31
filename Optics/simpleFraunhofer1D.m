@@ -24,6 +24,9 @@
 %   x Implement 'reverse' and verify
 %   x Element factor
 %   - Normalization: not quite correct, can't figure out
+%   x Nearfield subsampling to increase farfield extent
+%       x Implement and test
+%       - Verify 'reverse' still works with this
 
 function [Ez, th, E0, x] = simpleFraunhofer1D(x, E0, varargin)
 %% Defaults and magic numbers
@@ -81,6 +84,9 @@ end
 if numel(th) < 2
     th = [-th/2, th/2];
 end
+if max(abs(th)) > pi/2
+    error("Fraunhofer propagation cannot address greater than ±π/2");
+end
 if numel(th) == 2
     th = linspace(th(1), th(2), N);
 end
@@ -97,7 +103,7 @@ end
 dx = mean(diff(x));
 if (std(diff(x))/dx > 1e-3) && (std(diff(sin(x)))/sin(dx) > 1e-3)
     xN = linspace(min(x), max(x), max([N, numel(x)]))';
-    E0 = interp1(x, E0, xN, "linear");
+    E0 = interp1(x, E0, xN, "nearest");
     x = xN(:); clear("xN");
 end
 
@@ -115,27 +121,46 @@ end
 
 
 %% Fraunhofer propagation: FFT
-% Upsample as needed to fully cover desired th
+% Check coordinate bounds
 thMax = asin(lambda / dx / 2);
 
+% Subsample nearfield as needed to fully cover desired farfield
+if thMax < max(abs(th))
+    % Use integer multiples of original coordinates only for ideal subsampling
+    upN = ceil(max(abs(th)) / thMax);
+    xN = linspace(min(x), max(x), numel(x)*upN)';
+    E0 = interp1(x, E0, xN, "nearest");
+    x = xN(:); clear("xN");
+    
+    % Redetermine thMax
+    dx = dx / upN;
+    thMax = real(asin(lambda / dx / 2));
+end
+
+% Determine far-field coordinates
 if any(isnan(th)) || (max(th) == thMax && min(th) == thMax && numel(th) == N)
+    % Not specified or bounds match exactly
     upN = 1;
-elseif thMax > max(abs(th))
-    upN = max([1 ceil(2*thMax / (max(th) - min(th)))]);
-    if upN > 1; upN = 2*upN; end    % Oversampled for later interpolation
 else
-    upN = 1;
+    % Other cases: make sure the minimum resolution is met
+    upN = max([1 ceil(thMax/N / min(diff(th)))]);
+    if upN > 1 && upN < 5; upN = 2*upN; end    % Oversampled for later interpolation
     resample = true;    % Only looking at a subset of the desired angle here; resample for return
 end
 
 % Assemble far field coordinates; v = sin(th)/lambda
 thF = asin(lambda * linspace(-0.5,0.5,N*upN) / dx)';
 
+% Remove evanescent propagation angles from calculations
+iProp = thF==real(thF);
+thF(~iProp) = NaN;
+
 % Edge-pad the near field for FFT
 E0 = [zeros(ceil((N*upN - numel(E0))/2), 1); E0; zeros(floor((N*upN - numel(E0))/2), 1)];
 
 % Generate uniform-emission element factor
-elementFactor = gradient(thF) / mean(gradient(thF));
+elementFactor = gradient(thF) / mean(gradient(thF(iProp)));
+elementFactor([find(iProp,1,'first'), find(iProp,1,'last')]) = 0;
 
 % Apply nonuniform element factor if specified
 if ~any(isnan(ef))
@@ -148,7 +173,7 @@ if ~any(isnan(ef))
 end
 
 % Normalize such that the integral is unity
-elementFactor = elementFactor .* trapz(thF/2/pi, elementFactor.^2)^-0.5;
+elementFactor(iProp) = elementFactor(iProp) .* trapz(thF(iProp)/2/pi, elementFactor(iProp).^2)^-0.5;
 
 % Propagate: just an FFT
 if ~reverse
@@ -157,6 +182,10 @@ else
     Ez = fftshift(ifft(ifftshift(elementFactor .* E0), N*upN))*N*upN / dx^0.5;
 end
 % figure(3); plotyy(thF, abs(Ez), thF, angle(Ez)); axis tight; drawnow;
+
+% Reduce to non-evanescent portion
+thF = thF(iProp);
+Ez = Ez(iProp);
 
 % Resample to desired size
 if upN == 1 && ~resample
