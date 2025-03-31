@@ -58,7 +58,7 @@ while ~isempty(varargin)
     % Look for valid arguments
     switch arg
         case 'th'
-            th = double(nextarg("Theta")); th = th(:)';
+            th = double(nextarg("Theta"));
         case 'n'
             N = round(nextarg("N"));
         case 'lambda'
@@ -68,7 +68,7 @@ while ~isempty(varargin)
         case {"reverse", "inverse"}
             reverse = true;
         case {"elementfactor", "element", "ef"}
-            ef = double(nextarg("Element factor")); ef = ef(:)';
+            ef = double(nextarg("Element factor"));
             if isnan(N); N = numel(ef); end
         otherwise
             if ~isempty(arg)
@@ -121,7 +121,7 @@ thMax = asin(lambda / dx / 2);
 if any(isnan(th)) || (max(th) == thMax && min(th) == thMax && numel(th) == N)
     upN = 1;
 elseif thMax > max(abs(th))
-    upN = max([1 ceil(thMax / max(abs(th)))]);
+    upN = max([1 ceil(2*thMax / (max(th) - min(th)))]);
     if upN > 1; upN = 2*upN; end    % Oversampled for later interpolation
 else
     upN = 1;

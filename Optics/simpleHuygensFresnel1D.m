@@ -65,7 +65,7 @@ while ~isempty(varargin)
             z = double(nextarg("z"));
             z = z(1);
         case 'th'
-            th = double(nextarg("Theta")); th = th(:)';
+            th = double(nextarg("Theta"));
         case 'n'
             N = round(nextarg("N"));
         case 'lambda'
@@ -77,7 +77,7 @@ while ~isempty(varargin)
         case {"reverse", "inverse"}
             reverse = true;
         case {"elementfactor", "element", "ef"}
-            ef = double(nextarg("Element factor")); ef = ef(:)';
+            ef = double(nextarg("Element factor"));
             if isnan(N); N = numel(ef); end
         otherwise
             if ~isempty(arg)
