@@ -109,7 +109,7 @@ end
         if ~quiet
             if numel(varargin) > 0; lastout = varargin{1}; else; lastout = ''; end;
             
-            fprintf(repmat('\b', 1, numel(sprintf(lastout))));
+            fprintf(repmat('\b', 1, strlength(lastout)));
             fprintf(out);
         end
     end
