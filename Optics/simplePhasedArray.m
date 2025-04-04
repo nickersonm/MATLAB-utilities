@@ -74,21 +74,21 @@ while ~isempty(varargin)
     
     % Look for valid arguments
     switch arg
-        case 'p'
+        case "p"
             P = double(nextarg("P")); P = P(1);
-        case 'z'
+        case "z"
             z = double(nextarg("z")); z = z(1);
-        case 'th'
+        case "th"
             th = double(nextarg("Theta")); th = th(:)';
-        case 'n'
+        case "n"
             N = round(nextarg("N"));
-        case 'lambda'
+        case "lambda"
             lambda = double(nextarg("lambda"));
-        case 'k'
+        case "k"
             lambda = 2*pi/double(nextarg("k"));
-        case 'plot'
+        case "plot"
             plotH = nextarg("plot handle");
-        case 'nocenter'
+        case "nocenter"
             nocenter = true;
         case {"elementfactor", "element", "ef"}
             ef = double(nextarg("Element factor")); ef = ef(:)';
