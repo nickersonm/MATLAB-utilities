@@ -64,7 +64,9 @@ end
 
 
 %% 2-axis plot
-h = figure(figN);
+if gcf().Number ~= figN
+    figure(figN);
+end
 
 % Plot coeffs
 yyaxis left;
@@ -75,26 +77,33 @@ if numel(ax.Children) ~= numel(coeff) || any(cell2mat(cellfun(@size, {ax.Childre
     clf; yyaxis left;
     hold on;
     for i = 1:numel(coeff)
-        plot(1, coeff(i));
+        plot(1, NaN);
     end
     hold off;
-else
-    for i=1:numel(coeff)
-        [ax.Children(i).XData(end+1), ax.Children(i).YData(end+1)] = ...
-            deal(ax.Children(i).XData(end) + 1, coeff(i));
-    end
+end
+ax = gca();
+for i=1:numel(coeff)
+    [ax.Children(i).XData(end+1), ax.Children(i).YData(end+1)] = ...
+        deal(ax.Children(i).XData(end) + 1, coeff(i));
 end
 
 % Plot J
 yyaxis right;
 ax = gca();
-if isempty(ax.Children)
-    plot(1, J);
-else
-    [ax.Children(1).XData(end+1), ax.Children(1).YData(end+1)] = ...
-        deal(ax.Children(1).XData(end) + 1, J);
+
+if numel(ax.Children) ~= numel(J) || any(cell2mat(cellfun(@size, {ax.Children.XData}, 'UniformOutput', false)) ~= cell2mat(cellfun(@size, {ax.Children.YData}, 'UniformOutput', false)))
+    hold on;
+    for i = 1:numel(J)
+        plot(1, NaN);
+    end
+    hold off;
+end
+ax = gca();
+for i=1:numel(J)
+    [ax.Children(i).XData(end+1), ax.Children(i).YData(end+1)] = ...
+        deal(ax.Children(i).XData(end) + 1, J(i));
 end
 
-drawnow;
+drawnow limitrate;
 
 end

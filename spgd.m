@@ -1,4 +1,4 @@
-%% spgd.m  MN 2024-08-02 -- 2025-02-27
+%% spgd.m  MN 2024-08-02 -- 2025-04-14
 % Implementation of the SPGD algorithm including orthonormal dithering
 %  (c) Michael Nickerson 2025
 % 
@@ -20,14 +20,16 @@
 %       'stop', %f: Stopping threshold, fractional change in fhandle(coeff) (default 1e-4)
 %       'callback', <handle>: call with (coeff, J) every iteration
 %       'quiet': don't show messages
-%       'gleak', %f: leakage coefficient (default 1-gamma^2)
-%       'min' | 'max': Minimize or maximize (default maximize)
+%       'gleak', %f: leakage coefficient (default 1)
+%       'min' | 'max': minimize or maximize (default maximize)
+%       'naive': use naive method (keep/discard change) instead of orthonormal; dither -> dither*gamma
 %
 % TODO:
 %   x Initial implementation
 %   x Test
 %   x Callback test
-%   - Other options?
+%   - Other options
+%       x Added "naive" method
 %       - Cap gradient?
 
 function [coeff, Jp] = spgd(fhandle, coeff, varargin)
@@ -41,8 +43,9 @@ callback = NaN;
 dither = NaN;
 clow = -inf;
 chigh = inf;
-gleak = NaN;
+gleak = 1;
 optsign = 1;
+orthonormal = true;
 
 
 %% Argument parsing
@@ -53,8 +56,8 @@ end
 if isempty(coeff) || ~isa(coeff, "double")
     error('Required input "coeff" is not a double!');
 end
-if ~isa(fhandle(coeff), "double") || numel(fhandle(coeff)) > 1
-    error('"fhandle" does not return a scalar double!');
+if ~isa(fhandle(coeff), "double")
+    error('"fhandle" does not return a double!');
 end
 
 % Accept a struct.option = value structure
@@ -95,6 +98,8 @@ while ~isempty(varargin)
             optsign = -1;
         case 'quiet'
             quiet = true;
+        case {"naive", "simple", "random"}
+            orthonormal = false;
         otherwise
             if ~isempty(arg)
                 warning('Unexpected option "%s", ignoring', num2str(arg));
@@ -167,27 +172,48 @@ if isa(callback, "function_handle"); fJ = @cbhandle; else; fJ = fhandle; end
 
 
 %% Generate orthonormal codes
-% Using Hadamard codes
-codes = hadamard(2^ceil(log2(Nu+1)));
-codes = codes(:, 2:Nu+1); % Disregard the first unbalanced codes and drop unnecessary codes
-
-% Alternative: use Gold codes, e.g. https://github.com/gsongsong/matlab-goldcode
-% %   Known tap values for n in [5, 6, 7, 9, 10, 11]
-% n = [5, 6, 7, 9, 10, 11];
-% codes = goldcode(n(max([1, find(log2(Nu) > n, 1)])))';
-% [~, ii] = sort(abs(sum(codes, 1)));
-% codes = codes(:, sort(ii(1:Nu)));   % Keep most balanced codes
-
-Nh = size(codes,1);
-
+if orthonormal
+    % Using Hadamard codes
+    codes = hadamard(2^ceil(log2(Nu+1)));
+    codes = codes(:, 2:Nu+1); % Disregard the first unbalanced codes and drop unnecessary codes
+    
+    % Alternative: use Gold codes, e.g. https://github.com/gsongsong/matlab-goldcode
+    % %   Known tap values for n in [5, 6, 7, 9, 10, 11]
+    % n = [5, 6, 7, 9, 10, 11];
+    % codes = goldcode(n(max([1, find(log2(Nu) > n, 1)])))';
+    % [~, ii] = sort(abs(sum(codes, 1)));
+    % codes = codes(:, sort(ii(1:Nu)));   % Keep most balanced codes
+    
+    Nh = size(codes,1);
+else
+    % Unless using "naive" random method
+    Nh = 3;
+%     newcode = @() ((randn(1, numel(coeff)) > 0)*2-1);
+    newcode = @() 2*(rand(1, numel(coeff)) - 0.5);
+    codes = repmat(newcode(), Nh, 1);
+    dither = dither * gamma;
+end
 
 %% Main loop
-i=1;
-J = ones(Nh, 1) * fJ(coeff);
-dJ = diff([J; J(1)]);
-x = coeff + gamma * cumsum(codes,1) .* dither;
-dx = diff([x(end,:);x],1,1);
+x = coeff + optsign * codes .* dither;
+J = zeros(Nh, 1);
+dx = diff([x; x(1,:)], 1);
 imax = floor(intmax/Nh)*Nh;
+
+% Populate the initial elements
+if orthonormal
+    % First portion to avoid rank deficiency
+    for i=1:(size(dx,2)-1)
+        J(i) = mean(fJ(x(i,:)));
+    end
+    i1 = i;
+    i = i+1;
+else
+    J(1) = mean(fJ(x(1,:)));
+    i1 = 1;
+    i = 2;
+end
+dJ = diff([J; J(1)]);
 
 while i <= iter
     % Define circular indicies
@@ -196,31 +222,46 @@ while i <= iter
     i2 = mod(i-0, Nh)+1;    % Next iteration
     
     % Apply coefficient for this iteration
-    J(i1) = fJ(x(i1,:));
+    J(i1) = mean(fJ(x(i1,:)));
     dJ(i1) = J(i1) - J(i0);
     dx(i1,:) = x(i1,:) - x(i0,:);
     
-    % Check for stop
-    if abs(dJ(i1)/mean(J)) < stop
-        coeff = x(i1,:);
+    % Check for stop as long as it's improving
+    if dJ(i1)*optsign > 0 && abs(dJ(i1)/mean(J)) < stop
         break;
     end
     
-    % Determine best estimate of the gradient
-    dJdx = dJ'/dx';
+    % Determine change in coefficients
+    if orthonormal
+        % Determine best estimate of the gradient
+        dJdx = dJ'/dx';
+        
+        % TODO: cap the gradient?
+        % dJdx = sign(dJdx) .* min(abs(dJdx), 1e3);
+        
+        % Set next iteration's coefficient
+        du = gamma * dJdx + codes(i2, :) .* dither;
+    else
+        % Simply apply a random dither
+        du = newcode() .* dither;
+        
+        % Revert previous iteration's coefficients if no improvement
+        if dJ(i1)*optsign < 0
+            x(i1,:) = x(i0,:);
+            J(i1) = J(i0);
+            dJ(i1) = 0;
+        end
+    end
     
-    % TODO: cap the gradient?
-    % dJdx = sign(dJdx) .* min(abs(dJdx), 1e3);
-    
-    % Set next iteration's coefficient
-    du = gamma * dJdx + codes(i2, :) .* dither;
-    u = x(i1,:)*gleak + optsign * du;
+    % Set next iteration's coefficients
+    u = x(i1,:)*gleak + optsign*du;
     x(i2,:) = modbounds(u, clow, chigh);
     
     i = mod(i, imax) + 1;
 end
 
-% Final function value
+% Final values
+coeff = x(i1,:);
 Jp = fJ(coeff);
 
 end
