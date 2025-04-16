@@ -140,14 +140,16 @@ elementFactor = elementFactor .* trapz(th/2/pi, elementFactor.^2)^-0.5;
 % Break down by `th` block as necessary
 blockN = numel(th);
 doubleBytes = 8;
-maxSize = memory().MaxPossibleArrayBytes/doubleBytes;
+persistent maxSize;
+if isempty(maxSize); maxSize = memory().MaxPossibleArrayBytes/doubleBytes; end
+
 if maxSize < 8 * numel(E0)*blockN
     blockN = ceil(maxSize / 10 / numel(E0));
 end
 blocks = 1:numel(th); blocks((end+1):(end+blockN-rem(numel(th), blockN))) = NaN; blocks = reshape(blocks, blockN, []);
 
 % Preallocate
-Ez = sparse(numel(th),1);
+Ez = NaN(numel(th),1);
 
 % Process blocks as needed
 for ii = blocks
