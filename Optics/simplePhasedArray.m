@@ -14,6 +14,7 @@
 %
 %     Options:
 %       'P', %f: Total power of emitters (default 1)
+%       'E0', [%f]: Electric field of individual emitters, must match numel(x)
 %       'z', %f: Propagation distance from center of input (default 100)
 %       'th', %f: Specify output angle vector as bound, span, or grid (default pi)
 %       'N', %i: Far-field linear grid size (default 2^12+1)
@@ -50,6 +51,7 @@ C0 = (2*376.73)^-1; % Siemens; C0 == eps0*c/2
 ef = NaN;
 norm = false;
 fraunhofer = false;
+E0 = NaN;
 
 
 %% Argument parsing
@@ -78,6 +80,11 @@ while ~isempty(varargin)
             P = double(nextarg("P")); P = P(1);
         case "z"
             z = double(nextarg("z")); z = z(1);
+        case {"e0", "e", "ei"}
+            E0 = double(nextarg("E0"));
+            if numel(E0) > 1 && numel(E0) ~= numel(x)
+                error("Number of 'E0' elements does not match number of 'x' elements!");
+            end
         case "th"
             th = double(nextarg("Theta")); th = th(:)';
         case "n"
@@ -147,11 +154,12 @@ end
 
 
 %% Build input vectors
-Ex = 0*x + 1;
+if isnan(E0); E0 = 1; end
+Ex = 0*x + E0(:);
 
 % Normalize power
 %   Total power = C0 * sum(abs(Ex).^2)
-Ex = Ex * (P / (C0 * sum(abs(Ex).^2)))^0.5;
+Ex = Ex .* (P / (C0 * sum(abs(Ex).^2)))^0.5;
 
 
 %% Apply phases and compute
