@@ -24,7 +24,7 @@ E0 = E0 .* exp(1i*ph0);
 xz = 50;
 yz = xz;
 
-[Ez, xz, yz] = efieldMeanKernel(x0, y0, z-z0, E0, 'plot', 2, 'xz', xz, 'yz', yz, 'N', 2^9, 'valcheck', 0);
+[Ez, xz, yz] = efieldMeanKernel(x0, y0, z-z0, E0, 'plot', 2, 'xz', xz, 'yz', yz, 'N', 2^9);
 
 % Ez0 = efieldGaussianBeam(xz, yz, beams, 'q', gaussianQ(1.55e-6, MFD, z), 'N', 2^9, 'plot', 3);
 

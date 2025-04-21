@@ -18,7 +18,7 @@ for ii = 1:numel(spacings)
     [E0, x0, y0] = efieldGaussianBeam(x0, y0, beams, 'q', gaussianQ(lambda, MFD, z0), 'N', 2^9, 'plot', 0);
     totalP = sum((gradient(y0)*gradient(x0)) .* abs(E0).^2, 'all');
 
-    [Ez, xz, yz] = efieldMeanKernel(x0, y0, z, E0, 'xz', xz, 'yz', yz, 'N', 2^8, 'valcheck', 0);
+    [Ez, xz, yz] = efieldMeanKernel(x0, y0, z, E0, 'xz', xz, 'yz', yz, 'N', 2^8);
 
     centerR = 0.5/2;
     centerI = xz.^2 + yz.^2 < centerR^2;
@@ -48,7 +48,7 @@ for ii = 1:numel(spacings)
     [E0, x0, y0] = efieldGaussianBeam(x0, y0, beams, 'q', gaussianQ(lambda, MFD, z0), 'N', 2^9, 'plot', 0);
     totalP = sum((gradient(y0)*gradient(x0)) .* abs(E0).^2, 'all');
 
-    [Ez, xz, yz] = efieldMeanKernel(x0, y0, z, E0, 'xz', xz, 'yz', yz, 'N', 2^8, 'valcheck', 0);
+    [Ez, xz, yz] = efieldMeanKernel(x0, y0, z, E0, 'xz', xz, 'yz', yz, 'N', 2^8);
 
     centerR = 0.5/2;
     centerI = xz.^2 + yz.^2 < centerR^2;
