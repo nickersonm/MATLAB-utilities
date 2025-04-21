@@ -227,6 +227,24 @@ end
 axLims = sort(axLims, 2);
 
 
+%% Expand multiline "allData" entries
+newData = {}; newOpts = {}; newLegend = {}; newAxes = []; newColor = [];
+for i=1:numel(allData)
+    for k=2:size(allData{i}, 2)
+        newData     = [newData, {allData{i}(:,[1 k])}];
+        newOpts     = [newOpts, allOpts(i)];
+        newLegend   = [newLegend, allLegend(i)];
+        newAxes     = [newAxes; allAxes(i,:)];
+        newColor    = [newColor, allColor(i)];
+    end
+end
+allData     = newData;
+allOpts     = newOpts;
+allLegend   = newLegend;
+allAxes     = newAxes;
+allColor    = newColor;
+
+
 %% Helper functions, if any
     % Regularize plot data
     function plotData = checkPlotData(plotData)
@@ -380,7 +398,7 @@ for i=1:numel(allData)
     axPlot = axH(allAxes(i));
     
     % Assemble plot command
-    plotCmd = flatten(axPlot, allData{i}(:,1), allData{i}(:,2), allOpts{i});
+    plotCmd = flatten(axPlot, allData{i}(:,1), allData{i}(:,2:end), allOpts{i});
     
     % Update colororder
     axPlot.ColorOrderIndex = max([axH.ColorOrderIndex]);
@@ -429,7 +447,7 @@ drawnow;
 if ~isempty(savFile) && strlength(savFile) > 0
     if ~(isempty(fileparts(savFile)) || fileparts(savFile) == "") && ~exist(fileparts(savFile), "dir"); mkdir(fileparts(savFile)); end
     [~, ~, ext] = fileparts(savFile);  ext = char(ext);
-    print(figH, savFile, ["-d" ext(2:end)], ["-r" num2str(dpi)]);
+    print(figH, savFile, ['-d' ext(2:end)], ['-r' num2str(dpi)]);
 end
 
 
