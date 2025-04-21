@@ -1,5 +1,6 @@
-%% efieldGaussianBeam.m  MN 2018-09-14
-% Calculates the E-field intensity for arbitrary gaussian beam sources
+%% efieldGaussianBeam.m
+%   Michael Nickerson 2018-09-14, last updated 2025-04-21
+%   Calculates the E-field intensity for arbitrary gaussian beam sources
 % 
 % Requirements:
 %   - None
@@ -26,7 +27,7 @@
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %
 % TODO:
-%   - 
+%   - Improve speed
 
 function [E, x, y] = efieldGaussianBeam(x, y, sources, varargin)
 %% Defaults and magic numbers
@@ -113,11 +114,18 @@ end
 if numel(y) == 2
     y = linspace(y(1), y(end), N(2))';
 end
+N(1) = numel(x); N(2) = numel(y);
 
 
 %% Calculate E fields
-E = arrayfun(@(sx,sy,sq,sphi,sI) sI*Erq(r(x-sx, y-sy), sq).*exp(1i*sphi), sources(:,1), sources(:,2), sources(:,3), sources(:,4), sources(:,5), 'UniformOutput', 0);
-E = sum(cat(3, E{:}), 3);
+E = zeros(N(1), N(2));
+for i=1:size(sources,1)
+    E = E + sources(i,5)*Erq(r(x-sources(i,1), y-sources(i,2)), sources(i,3)).*exp(1i*sources(i,4));
+end
+
+% This is more compact but slower
+% E = arrayfun(@(sx,sy,sq,sphi,sI) sI*Erq(r(x-sx, y-sy), sq).*exp(1i*sphi), sources(:,1), sources(:,2), sources(:,3), sources(:,4), sources(:,5), 'UniformOutput', 0);
+% E = sum(cat(3, E{:}), 3);
 
 
 %% Optionally plot
