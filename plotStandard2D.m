@@ -1,55 +1,56 @@
-%% plotStandard2D.m  MN 2020-06-29
-% Generate a plot with the given data in a standard format
+%% plotStandard2D.m
+%   Michael Nickerson 2020-06-29, last updated 2025-04-21
+%   Generate a plot with the given data in a standard format
 % 
 % Usage: [figH, axH, plotH] = plotStandard2D([parameters])
 %   Returns:
 %     figH:  Handle to figure
-%     axH: Handle to axes [x1y1, x2y1, x1y2, x2y2]
+%     axH:   Handle to axes [x1y1, x2y1, x1y2, x2y2]
 %     plotH: Handle to plots
 %
 %   Parameters:
 %     Data: applies to most recently specified plot data only
 %       [xv, yv]: x and y column vectors to plot; yv can be NxM to plot M lines
 %       Any unrecognized options are passed to the `plot` command
-%       'opts', cell: Include specified cell contents in `plot` command
-%       'style', string: Use this style
-%       'legend', string: Add a legend <string>
-%       'y2': Plot y-data on y2 axis
-%       'x2': Plot x-data on x2 axis
-%       'samecolor': Keep color the same as the previous plot; not valid for first dataset
+%       "opts", cell: Include specified cell contents in `plot` command
+%       "style", string: Use this style
+%       "legend", string: Add a legend <string>
+%       "y2": Plot y-data on y2 axis
+%       "x2": Plot x-data on x2 axis
+%       "samecolor": Keep color the same as the previous plot; not valid for first dataset
 %     Figure: applies to all inputs
-%       ('figure' | 'fig'), h: Plot using existing or new figure handle h
-%       'size', [xSize, ySize]: Make figure this size
-%       ('pos' | 'position'), [x y dx dy]: Set figure position directly
-%       ('invisible' | 'hide'): Don't show figure
-%       'add': Add data to existing plot (hold); requires valid ('figure', h)
-%       'logx': Make x-axis logscale
-%       'logy': Make y-axis logscale
-%       'xlim', [xMin, xMax]: Set x limit (±inf for auto limit)
-%       'ylim', [yMin, yMax]: Set y limit (±inf for auto limit)
-%       'xlabel', string: Specify x label
-%       'ylabel', string: Specify y label
-%       'axfont', string: Specify axis font, default 'Consolas'
-%       ('axsize' | 'axfs'), double: Specify axis font size, default 14
-%       ('axweight' | 'axfw'), string: Specify axis font weight, default 'bold'
-%       'title', string: Specify plot title
-%       'tfont', string: Specify title font; default 'Source Sans Pro'
-%       ('tsize' | 'tfs'), double: Specify title font size; default 20
-%       ('tweight' | 'tfw'), string: Specify title font weight; default 'normal'
-%       'interpreter', string: Specify title interpreter
-%       'legendloc', string: Specify legend location; default 'best'
-%       'legendor', ('vertical' | 'horizontal'): Specify legend orientation
-%       'legendfont', string: Specify legend font; default 'Consolas'
-%       ('legendsize' | 'legendfs'), double: Specify legend font size; default 20
-%       'x2label', string: specify x2 label
-%       'y2label', string: Specify y2 label
-%       'logx2': Make x2-axis logscale
-%       'logy2': Make y2-axis logscale
-%       'x2lim', [x2Min, x2Max]: Set x2 limit (±inf for auto limit)
-%       'y2lim', [y2Min, y2Max]: Set y2 limit (±inf for auto limit)
-%       'save', filename: Save to filename (detect format from extension)
-%       'dpi', dpi: DPI to save with; default 96
-%       ('nocolor' | 'noaxcol' | 'norecolor'): Don't recolor axes based on plot colors
+%       ("figure" | "fig"), h: Plot using existing or new figure handle h
+%       "size", [xSize, ySize]: Make figure this size
+%       ("pos" | "position"), [x y dx dy]: Set figure position directly
+%       ("invisible" | "hide"): Don"t show figure
+%       "add": Add data to existing plot (hold); requires valid ("figure", h)
+%       "logx": Make x-axis logscale
+%       "logy": Make y-axis logscale
+%       "xlim", [xMin, xMax]: Set x limit (±inf for auto limit)
+%       "ylim", [yMin, yMax]: Set y limit (±inf for auto limit)
+%       "xlabel", string: Specify x label
+%       "ylabel", string: Specify y label
+%       "axfont", string: Specify axis font (default "Consolas")
+%       ("axsize" | "axfs"), double: Specify axis font size (default 14)
+%       ("axweight" | "axfw"), string: Specify axis font weight (default "bold")
+%       "title", string: Specify plot title
+%       "tfont", string: Specify title font (default "Source Sans Pro")
+%       ("tsize" | "tfs"), double: Specify title font size (default 20)
+%       ("tweight" | "tfw"), string: Specify title font weight (default "normal")
+%       "interpreter", string: Specify title interpreter
+%       "legendloc", string: Specify legend location (default "best")
+%       "legendor", ("vertical" | "horizontal"): Specify legend orientation
+%       "legendfont", string: Specify legend font (default "Consolas")
+%       ("legendsize" | "legendfs"), double: Specify legend font size (default 20)
+%       "x2label", string: specify x2 label
+%       "y2label", string: Specify y2 label
+%       "logx2": Make x2-axis logscale
+%       "logy2": Make y2-axis logscale
+%       "x2lim", [x2Min, x2Max]: Set x2 limit (±inf for auto limit)
+%       "y2lim", [y2Min, y2Max]: Set y2 limit (±inf for auto limit)
+%       "save", filename: Save to filename (detect format from extension)
+%       "dpi", dpi: DPI to save with; default 96
+%       ("nocolor" | "noaxcol" | "norecolor"): Don"t recolor axes based on plot colors
 %
 % TODO:
 %   x Symmeterize x2 and y2 behavior/coloring
@@ -57,8 +58,8 @@
 %   ~ Synchronize axes when x1y1 combined with x1y2 etc.
 %   - Implement varying color along length of line?  Colorbar?
 %   - Improve elegance of title assignment code
-%   x Fix 'add': currently doesn't work well!  Maybe axes results are random? Fixed using axH.Tag
-%   - Add error bar plotting via 'fill' or 'patch'
+%   x Fix "add": currently doesn"t work well!  Maybe axes results are random? Fixed using axH.Tag
+%   - Add error bar plotting via "fill" or "patch"
 
 function [figH, axH, plotH] = plotStandard2D(varargin)
 %% Defaults and magic numbers
@@ -69,25 +70,25 @@ plotPos = NaN;
 visible = true;
 
 axLims = ones(4,2) .* [-inf, inf];
-axScale = {'linear', 'linear', 'linear', 'linear'};
+axScale = ["linear", "linear", "linear", "linear"];
 axRecolor = 1;
 xLa = ""; yLa = ""; x2La = ""; y2La = "";
 tit = "";
 interpreter = "tex";
 
-titF  = 'Source Sans Pro';
+titF  = "Source Sans Pro";
 titFS = 20;
-titFW = 'bold';
-axF   = 'Consolas';
+titFW = "bold";
+axF   = "Consolas";
 axFS  = 14;
-axFW  = 'bold';
+axFW  = "bold";
 
-legendLoc   = 'best';
-legendOr    = 'vertical';
-legendF     = 'Consolas';
+legendLoc   = "best";
+legendOr    = "vertical";
+legendF     = "Consolas";
 legendFS    = 16;
 
-savFile = '';
+savFile = "";
 dpi = 96;
 
 allData = {};
@@ -110,7 +111,7 @@ while ~isempty(varargin)
     if isnumeric(arg) && (length(arg) > 1)
         allData{end+1} = checkPlotData(arg);
         allLegend{end+1} = [];
-        allOpts{end+1} = {'LineWidth', 3};
+        allOpts{end+1} = {"LineWidth", 3};
         allAxes(end+1,:) = [1, 1];
         allColor{end+1} = [];
         continue;
@@ -118,94 +119,94 @@ while ~isempty(varargin)
     
     % Otherwise continue to look for other arguments
     switch arg
-        case 'opts'
+        case "opts"
             allOpts{end} = flatten(varargin{1}, allOpts{end});
             varargin(1) = [];
-        case 'style'
+        case "style"
             allOpts{end} = flatten(varargin{1}, allOpts{end});
             varargin(1) = [];
-        case {'figure', 'fig', 'handle'}
+        case {"figure", "fig", "handle"}
             figH = varargin{1}; varargin(1) = [];
-        case 'size'
+        case "size"
             plotSize = round(varargin{1}); varargin(1) = [];
-        case {'position', 'pos'}
+        case {"position", "pos"}
             plotPos = round(varargin{1}, 2); varargin(1) = [];
             if all(plotSize == [800, 600]); plotSize = [NaN, NaN]; end   % Override default size
-        case {'invisible', 'hide'}
+        case {"invisible", "hide"}
             visible = false;
-        case {'add', 'hold'}
+        case {"add", "hold"}
             addData = 1;
-        case 'color'
+        case "color"
             allColor{end} = double(varargin{1}); varargin(1) = [];
-        case 'samecolor'
-            allColor{end} = 'same';
-        case {'legend', 'name'}
+        case "samecolor"
+            allColor{end} = "same";
+        case {"legend", "name"}
             allLegend{end} = varargin{1}; varargin(1) = [];
-        case {'legendloc', 'legendlocation'}
+        case {"legendloc", "legendlocation"}
             legendLoc = varargin{1}; varargin(1) = [];
-        case {'legendor', 'legendorientation', 'legenddir'}
+        case {"legendor", "legendorientation", "legenddir"}
             legendOr = varargin{1}; varargin(1) = [];
-        case {'legendfont', 'legendf'}
+        case {"legendfont", "legendf"}
             legendF = varargin{1}; varargin(1) = [];
-        case {'legendfontsize', 'legendfs', 'legendsize'}
+        case {"legendfontsize", "legendfs", "legendsize"}
             legendFS = double(varargin{1}); varargin(1) = [];
-        case {'xlim', 'xlimit', 'xra', 'xrange'}
+        case {"xlim", "xlimit", "xra", "xrange"}
             axLims(1,:) = double(varargin{1}); varargin(1) = [];
-        case {'ylim', 'ylimit', 'yra', 'yrange'}
+        case {"ylim", "ylimit", "yra", "yrange"}
             axLims(2,:) = double(varargin{1}); varargin(1) = [];
-        case {'logx', 'xlog'}
-            axScale{1} = 'log';
-        case {'logy', 'ylog'}
-            axScale{2} = 'log';
-        case {'xlabel', 'xla'}
+        case {"logx", "xlog"}
+            axScale(1) = "log";
+        case {"logy", "ylog"}
+            axScale(2) = "log";
+        case {"xlabel", "xla"}
             xLa = varargin{1}; varargin(1) = [];
-        case {'ylabel', 'yla', 'y1label'}
+        case {"ylabel", "yla", "y1label"}
             yLa = varargin{1}; varargin(1) = [];
-        case {'axisfont', 'axfont', 'axisf', 'axf'}
+        case {"axisfont", "axfont", "axisf", "axf"}
             axF = varargin{1}; varargin(1) = [];
-        case {'axisfontsize', 'axisfs', 'axfs', 'axissize', 'axsize'}
+        case {"axisfontsize", "axisfs", "axfs", "axissize", "axsize"}
             axFS = double(varargin{1}); varargin(1) = [];
-        case {'axisfontweight', 'axisfw', 'axfw', 'axisweight', 'axweight'}
+        case {"axisfontweight", "axisfw", "axfw", "axisweight", "axweight"}
             axFW = string(varargin{1}); varargin(1) = [];
-        case {'title', 'tit'}
+        case {"title", "tit"}
             tit = varargin{1}; varargin(1) = [];
-        case {'titlefont', 'titfont', 'tfont', 'tf'}
+        case {"titlefont", "titfont", "tfont", "tf"}
             titF = varargin{1}; varargin(1) = [];
-        case {'titlefontsize', 'titlefs', 'titfs', 'titlesize', 'titsize', 'tsize', 'tfs'}
+        case {"titlefontsize", "titlefs", "titfs", "titlesize", "titsize", "tsize", "tfs"}
             titFS = double(varargin{1}); varargin(1) = [];
-        case {'titlefontweight', 'titlefw', 'titfw', 'titleweight', 'titweight', 'tweight', 'tfw'}
+        case {"titlefontweight", "titlefw", "titfw", "titleweight", "titweight", "tweight", "tfw"}
             titFW = string(varargin{1}); varargin(1) = [];
-        case {'interpreter', 'titletype'}
+        case {"interpreter", "titletype"}
             interpreter = varargin{1}; varargin(1) = [];
-        case {'x2label', 'x2la'}
+        case {"x2label", "x2la"}
             x2La = varargin{1}; varargin(1) = [];
-        case {'y2label', 'y2la'}
+        case {"y2label", "y2la"}
             y2La = varargin{1}; varargin(1) = [];
-        case 'y2'
+        case "y2"
             allAxes(end,2) = 2;
-        case 'x2'
+        case "x2"
             allAxes(end,1) = 2;
-        case 'y1'
+        case "y1"
             allAxes(end,2) = 1;
-        case 'x1'
+        case "x1"
             allAxes(end,1) = 1;
-        case {'x2lim', 'x2limit', 'x2ra', 'x2range'}
+        case {"x2lim", "x2limit", "x2ra", "x2range"}
             axLims(3,:) = double(varargin{1}); varargin(1) = [];
-        case {'y2lim', 'y2limit', 'y2ra', 'y2range'}
+        case {"y2lim", "y2limit", "y2ra", "y2range"}
             axLims(4,:) = double(varargin{1}); varargin(1) = [];
-        case {'logx2', 'x2log'}
-            axScale{3} = 'log';
-        case {'logy2', 'y2log'}
-            axScale{4} = 'log';
-        case {'save', 'out'}
+        case {"logx2", "x2log"}
+            axScale(3) = "log";
+        case {"logy2", "y2log"}
+            axScale(4) = "log";
+        case {"save", "out"}
             savFile = varargin{1}; varargin(1) = [];
-        case 'dpi'
+        case "dpi"
             dpi = double(varargin{1}); varargin(1) = [];
-        case {'nocolor', 'norecolor', 'noaxcol', 'noaxrecolor'}
+        case {"nocolor", "norecolor", "noaxcol", "noaxrecolor"}
             axRecolor = 0;
         otherwise
             if ~isempty(arg)
-%                 warning('Unexpected option "%s", adding to plot options of most recent line', num2str(arg));
+%                 warning("Unexpected option "%s", adding to plot options of most recent line", num2str(arg));
 %                 if isempty(allOpts)
 %                     allOpts{end} = arg;
 %                 else
@@ -236,7 +237,7 @@ axLims = sort(axLims, 2);
         
         % Check for insufficiently specified plot data
         if size(plotData, 2) < 2
-            error('Specified plot data does not contain two columns!');
+            error("Specified plot data does not contain two columns!");
         end
     end
     
@@ -261,7 +262,7 @@ axLims = sort(axLims, 2);
         
         % Get real handle if exists
         if isnumeric(h) % Try to find existing numbered figure
-            hh = findobj('Number', h, 'Type', 'figure');
+            hh = findobj("Number", h, "Type", "figure");
             if ~isempty(hh) && isvalid(hh); h = hh; end  % Existing valid figure
         end
         if ~isnumeric(h) && ishandle(h) && isvalid(h)    % Existing valid figure
@@ -269,13 +270,13 @@ axLims = sort(axLims, 2);
         elseif isnumeric(h) && ~isempty(h)   % New numeric figure
             h = figure(h); h.Visible = visible;
         else    % No or invalid figure specified
-            h = figure('visible', visible);
+            h = figure("visible", visible);
         end
         
         % Get current position and set new size
-        pos = get(h, 'Position');
+        pos = get(h, "Position");
         if ~isnan(x) && ~isnan(y)
-            set(h, 'Position', [pos(1) pos(2)+pos(4)-y x y]);
+            set(h, "Position", [pos(1) pos(2)+pos(4)-y x y]);
         end
     end
 
@@ -295,13 +296,13 @@ if addData ~= 1
     clf(figH);
     
     % Build axes: [x1y1, x2y1, x1y2, x2y2], tag with order
-    axH = arrayfun(@(i) axes(figH, 'Tag', num2str(i)), 1:4);
-    set(axH, 'NextPlot', 'add');
-    set(axH(2:end), 'Color', 'none');
+    axH = arrayfun(@(i) axes(figH, "Tag", num2str(i)), 1:4);
+    set(axH, "NextPlot", "add");
+    set(axH(2:end), "Color", "none");
 else
     % Retreive existing axes and sort to expected order
     axH = figH.Children;
-    axH = axH(strcmpi(get(axH, 'type'), 'axes'));
+    axH = axH(strcmpi(get(axH, "type"), "axes"));
     [~,axI] = sort([axH.Tag]);
     axH = axH(axI);
     
@@ -312,8 +313,8 @@ else
 end
 
 % Set axes locations
-set(axH([2,4]), 'XAxisLocation', 'top');
-set(axH([3,4]), 'YAxisLocation', 'right');
+set(axH([2,4]), "XAxisLocation", "top");
+set(axH([3,4]), "YAxisLocation", "right");
 
 % Change axes reference to linear array properly addressing axH vector
 allAxes = sub2ind([2, 2], allAxes(:,1), allAxes(:,2));
@@ -322,52 +323,52 @@ allAxes = sub2ind([2, 2], allAxes(:,1), allAxes(:,2));
 %% Format plot
 % Set axis visibility and labels appropriate for this dataset
 %   Axis vector is [x1y1, x2y1, x1y2, x2y2]
-set(axH([2,3]), 'Visible', 'off');
-xlabel(axH(1), xLa, 'FontSize', axFS, 'FontName', axF, 'Interpreter', interpreter, 'FontWeight', axFW);
-ylabel(axH(1), yLa, 'FontSize', axFS, 'FontName', axF, 'Interpreter', interpreter, 'FontWEight', axFW);
+set(axH([2,3]), "Visible", "off");
+xlabel(axH(1), xLa, "FontSize", axFS, "FontName", axF, "Interpreter", interpreter, "FontWeight", axFW);
+ylabel(axH(1), yLa, "FontSize", axFS, "FontName", axF, "Interpreter", interpreter, "FontWEight", axFW);
 if any( sum(allAxes == [2,4], 2) ) % X2 exists
-    xlabel(axH(4), x2La, 'FontSize', axFS, 'FontName', axF, 'Interpreter', interpreter, 'FontWeight', axFW);
+    xlabel(axH(4), x2La, "FontSize", axFS, "FontName", axF, "Interpreter", interpreter, "FontWeight", axFW);
 else
-    axH(4).XAxis.Visible = 'off';
+    axH(4).XAxis.Visible = "off";
 end
 if any( sum(allAxes == [3,4], 2) ) % Y2 exists
-    ylabel(axH(4), y2La, 'FontSize', axFS, 'FontName', axF, 'Interpreter', interpreter, 'FontWeight', axFW);
+    ylabel(axH(4), y2La, "FontSize", axFS, "FontName", axF, "Interpreter", interpreter, "FontWeight", axFW);
 else
-    axH(4).YAxis.Visible = 'off';
+    axH(4).YAxis.Visible = "off";
 end
 
 % Scale settings
-set(axH([1,3]), 'XScale', axScale{1}); % x1
-set(axH([1,2]), 'YScale', axScale{2}); % y1
-set(axH([2,4]), 'XScale', axScale{3}); % x2
-set(axH([3,4]), 'YScale', axScale{4}); % y2
+set(axH([1,3]), "XScale", axScale(1)); % x1
+set(axH([1,2]), "YScale", axScale(2)); % y1
+set(axH([2,4]), "XScale", axScale(3)); % x2
+set(axH([3,4]), "YScale", axScale(4)); % y2
 
 % Title, making space if needed
 %   x2 may get displaced by the title
 if (axH(4).XAxis.Visible == "on")
-    if ~isempty(tit); title(axH(4), tit, 'FontSize', titFS, 'FontName', titF, 'Interpreter', interpreter, 'FontWeight', titFW); end
-    set(axH, 'Position', axH(4).Position);
+    if ~isempty(tit); title(axH(4), tit, "FontSize", titFS, "FontName", titF, "Interpreter", interpreter, "FontWeight", titFW); end
+    set(axH, "Position", axH(4).Position);
 else
-    if ~isempty(tit); title(axH(1), tit, 'FontSize', titFS, 'FontName', titF, 'Interpreter', interpreter, 'FontWeight', titFW); end
-    set(axH, 'Position', axH(1).Position);
+    if ~isempty(tit); title(axH(1), tit, "FontSize", titFS, "FontName", titF, "Interpreter", interpreter, "FontWeight", titFW); end
+    set(axH, "Position", axH(1).Position);
 end
 
 % Link axes scales
-% linkprop(axH([1 3]), 'XLim');  % Same X1 axis
-% linkprop(axH([4 2]), 'XLim');  % Same X2 axis
-% linkprop(axH([1 2]), 'YLim');  % Same Y1 axis
-% linkprop(axH([4 3]), 'YLim');  % Same Y2 axis
-linkaxes(axH([1 3]), 'x');  % Same X1 axis
-linkaxes(axH([4 2]), 'x');  % Same X2 axis
-linkaxes(axH([1 2]), 'y');  % Same Y1 axis
-linkaxes(axH([4 3]), 'y');  % Same Y2 axis
+% linkprop(axH([1 3]), "XLim");  % Same X1 axis
+% linkprop(axH([4 2]), "XLim");  % Same X2 axis
+% linkprop(axH([1 2]), "YLim");  % Same Y1 axis
+% linkprop(axH([4 3]), "YLim");  % Same Y2 axis
+linkaxes(axH([1 3]), "x");  % Same X1 axis
+linkaxes(axH([4 2]), "x");  % Same X2 axis
+linkaxes(axH([1 2]), "y");  % Same Y1 axis
+linkaxes(axH([4 3]), "y");  % Same Y2 axis
 
 % Axes limits, if specified
-set(axH, 'XLimMode', 'auto'); set(axH, 'YLimMode', 'auto');
-set(axH( all([1;0;1;0] * ~isinf(axLims(1,:)), 2) ), 'XLim', axLims(1,:)); % x1
-set(axH( all([1;1;0;0] * ~isinf(axLims(2,:)), 2) ), 'YLim', axLims(2,:)); % y1
-set(axH( all([0;1;0;1] * ~isinf(axLims(3,:)), 2) ), 'XLim', axLims(3,:)); % x2
-set(axH( all([0;0;1;1] * ~isinf(axLims(4,:)), 2) ), 'YLim', axLims(4,:)); % y2
+set(axH, "XLimMode", "auto"); set(axH, "YLimMode", "auto");
+set(axH( all([1;0;1;0] * ~isinf(axLims(1,:)), 2) ), "XLim", axLims(1,:)); % x1
+set(axH( all([1;1;0;0] * ~isinf(axLims(2,:)), 2) ), "YLim", axLims(2,:)); % y1
+set(axH( all([0;1;0;1] * ~isinf(axLims(3,:)), 2) ), "XLim", axLims(3,:)); % x2
+set(axH( all([0;0;1;1] * ~isinf(axLims(4,:)), 2) ), "YLim", axLims(4,:)); % y2
 
 
 %% Plot data
@@ -390,13 +391,13 @@ for i=1:numel(allData)
         if any(allColor{i} > 1)
             allColor{i} = allColor{i} / max(allColor{i});
         end
-        plotCmd = flatten(plotCmd, 'Color', allColor{i});
-    elseif strcmp(allColor{i},'same')
+        plotCmd = flatten(plotCmd, "Color", allColor{i});
+    elseif strcmp(allColor{i},"same")
         axPlot.ColorOrderIndex = mod(axPlot.ColorOrderIndex - 2, size(axPlot.ColorOrder, 1))+1;
     end
     
     % Plot
-    hold(axPlot, 'on');
+    hold(axPlot, "on");
     plotH(i) = plot(plotCmd{:});
 end
 
@@ -404,9 +405,9 @@ end
 %% Plot-dependent formatting
 % Legend, if any specified
 if any(~cellfun(@isempty, allLegend))
-    % On axis 4 so it's on top
+    % On axis 4 so it"s on top
     legend(axH(4), plotH(~cellfun(@isempty, allLegend)), allLegend(~cellfun(@isempty, allLegend)), ...
-           'Location', legendLoc, 'FontName', legendF, 'FontSize', legendFS, 'Orientation', legendOr, 'Color', 'white');
+           "Location", legendLoc, "FontName", legendF, "FontSize", legendFS, "Orientation", legendOr, "Color", "white");
 end
 
 % Set axes color if exists and recoloring enabled
@@ -420,15 +421,15 @@ if (axH(4).YAxis.Visible == "on") && (axRecolor == 1)
 end
 
 % Finish up
-hold(axH, 'off'); grid(axH(1), 'on');
+hold(axH, "off"); grid(axH(1), "on");
 drawnow;
 
 
 %% Save if desired
-if ~isempty(savFile)
-    if ~(isempty(fileparts(savFile)) || fileparts(savFile) == "") && ~exist(fileparts(savFile), 'dir'); mkdir(fileparts(savFile)); end
+if ~isempty(savFile) && strlength(savFile) > 0
+    if ~(isempty(fileparts(savFile)) || fileparts(savFile) == "") && ~exist(fileparts(savFile), "dir"); mkdir(fileparts(savFile)); end
     [~, ~, ext] = fileparts(savFile);  ext = char(ext);
-    print(figH, savFile, ['-d' ext(2:end)], ['-r' num2str(dpi)]);
+    print(figH, savFile, ["-d" ext(2:end)], ["-r" num2str(dpi)]);
 end
 
 
