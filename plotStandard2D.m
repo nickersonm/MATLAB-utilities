@@ -117,6 +117,12 @@ while ~isempty(varargin)
         continue;
     end
     
+    % If not a string, just append
+    if ~isstring(arg) && ~ischar(arg)
+        allOpts{end} = flatten(allOpts{end}, arg);
+        continue;
+    end
+    
     % Otherwise continue to look for other arguments
     switch arg
         case "opts"
@@ -206,12 +212,7 @@ while ~isempty(varargin)
             axRecolor = 0;
         otherwise
             if ~isempty(arg)
-%                 warning("Unexpected option "%s", adding to plot options of most recent line", num2str(arg));
-%                 if isempty(allOpts)
-%                     allOpts{end} = arg;
-%                 else
-                    allOpts{end} = flatten(allOpts{end}, arg);
-%                 end
+                allOpts{end} = flatten(allOpts{end}, arg);
             end
     end
 end
