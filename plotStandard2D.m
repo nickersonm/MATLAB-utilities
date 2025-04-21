@@ -9,7 +9,7 @@
 %
 %   Parameters:
 %     Data: applies to most recently specified plot data only
-%       [xv, yv]: x and y column vectors to plot
+%       [xv, yv]: x and y column vectors to plot; yv can be NxM to plot M lines
 %       Any unrecognized options are passed to the `plot` command
 %       'opts', cell: Include specified cell contents in `plot` command
 %       'style', string: Use this style
@@ -39,6 +39,8 @@
 %       'interpreter', string: Specify title interpreter
 %       'legendloc', string: Specify legend location; default 'best'
 %       'legendor', ('vertical' | 'horizontal'): Specify legend orientation
+%       'legendfont', string: Specify legend font; default 'Consolas'
+%       ('legendsize' | 'legendfs'), double: Specify legend font size; default 20
 %       'x2label', string: specify x2 label
 %       'y2label', string: Specify y2 label
 %       'logx2': Make x2-axis logscale
@@ -80,7 +82,11 @@ axF   = 'Consolas';
 axFS  = 14;
 axFW  = 'bold';
 
-legendLoc = 'best'; legendOr = 'vertical';
+legendLoc   = 'best';
+legendOr    = 'vertical';
+legendF     = 'Consolas';
+legendFS    = 16;
+
 savFile = '';
 dpi = 96;
 
@@ -139,6 +145,10 @@ while ~isempty(varargin)
             legendLoc = varargin{1}; varargin(1) = [];
         case {'legendor', 'legendorientation', 'legenddir'}
             legendOr = varargin{1}; varargin(1) = [];
+        case {'legendfont', 'legendf'}
+            legendF = varargin{1}; varargin(1) = [];
+        case {'legendfontsize', 'legendfs', 'legendsize'}
+            legendFS = double(varargin{1}); varargin(1) = [];
         case {'xlim', 'xlimit', 'xra', 'xrange'}
             axLims(1,:) = double(varargin{1}); varargin(1) = [];
         case {'ylim', 'ylimit', 'yra', 'yrange'}
@@ -396,7 +406,7 @@ end
 if any(~cellfun(@isempty, allLegend))
     % On axis 4 so it's on top
     legend(axH(4), plotH(~cellfun(@isempty, allLegend)), allLegend(~cellfun(@isempty, allLegend)), ...
-           'Location', legendLoc, 'FontSize', 16, 'Orientation', legendOr, 'Color', 'white');
+           'Location', legendLoc, 'FontName', legendF, 'FontSize', legendFS, 'Orientation', legendOr, 'Color', 'white');
 end
 
 % Set axes color if exists and recoloring enabled
