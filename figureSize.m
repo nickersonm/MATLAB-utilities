@@ -40,4 +40,5 @@ function h = figureSize(h, varargin)
     % Get current position and set new size
     pos = get(h, 'Position');
     set(h, 'Position', [pos(1) pos(2)+pos(4)-y x y]);
+    drawnow;
 end
