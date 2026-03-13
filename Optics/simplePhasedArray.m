@@ -25,6 +25,7 @@
 %       'elementfactor' | 'ef', [%f]: vector of element factor scaling, corresponding to 'th' grid
 %       'norm': Normalize output by comparing to entire 2pi emission
 %       'fft' | 'fraunhofer': Use Fraunhofer propagation (FFT) instead of Huygens-Fresnel; ignores z
+%       'plane': treat 'th' as x_z grid; uses different kernel, does not apply to Fraunhofer
 %
 % TODO:
 %   x Demonstrate
@@ -37,6 +38,7 @@
 %   x Fix normalization: simply normalize to total 2pi emission
 %       - TBD: real physical normalization?
 %   x Add simpleFaunhofer1D option ("fft") => normalization is different
+%   x Allow for farfield plane instead of angle
 
 function [Ez, th, E0, x] = simplePhasedArray(x, ph, varargin)
 %% Defaults and magic numbers
@@ -51,6 +53,7 @@ C0 = (2*376.73)^-1; % Siemens; C0 == eps0*c/2
 ef = NaN;
 norm = false;
 fraunhofer = false;
+plane = [];
 E0 = NaN;
 
 
@@ -103,6 +106,8 @@ while ~isempty(varargin)
             norm = true;
         case {"fft", "fraunhofer"}
             fraunhofer = true;
+        case {"plane", "linear"}
+            plane = "plane";
         otherwise
             if ~isempty(arg)
                 warning('Unexpected option "%s", ignoring', num2str(arg));
@@ -149,7 +154,7 @@ end
 if fraunhofer
     prop1D = @(E0, th, ef) simpleFraunhofer1D(x, E0, "th", th, "ef", ef, "lambda", lambda);
 else
-    prop1D = @(E0, th, ef) simpleHuygensFresnel1D(x, E0, "th", th, "ef", ef, "z", z, "lambda", lambda);
+    prop1D = @(E0, th, ef) simpleHuygensFresnel1D(x, E0, "th", th, "ef", ef, "z", z, "lambda", lambda, plane);
 end
 
 

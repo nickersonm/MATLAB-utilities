@@ -18,6 +18,7 @@
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %       'reverse': Treat inputs as far-field plane and outputs as nearfield
 %       'elementfactor' | 'ef', [%f]: vector of element factor scaling, corresponding to 'th' grid
+%       'plane': treat 'th' as x_z grid instead of th grid; uses different kernel
 %
 % TODO:
 %   x Demonstrate
@@ -28,6 +29,7 @@
 %   x Element factor
 %   x Fix normalization: seems correct
 %   x Break up overly large simulations
+%   x Allow for farfield plane instead of angle
 
 function [Ez, th, E0, x, ef] = simpleHuygensFresnel1D(x, E0, varargin)
 %% Defaults and magic numbers
@@ -36,6 +38,7 @@ N = NaN;
 th = pi;
 lambda = 1.55e-6;     k=2*pi/lambda;
 reverse = false;
+plane = false;
 ef = NaN;
 
 
@@ -79,6 +82,8 @@ while ~isempty(varargin)
         case {"elementfactor", "element", "ef"}
             ef = double(nextarg("Element factor"));
             if isnan(N); N = numel(ef); end
+        case {"plane", "linear"}
+            plane = true;
         otherwise
             if ~isempty(arg)
                 warning('Unexpected option "%s", ignoring', num2str(arg));
@@ -154,10 +159,19 @@ Ez = NaN(numel(th),1);
 % Process blocks as needed
 for ii = blocks
     ii = ii(~isnan(ii));
-    %   Far field is the surface of a circle at z distance from origin
-    % rho = sqrt((z^2 * cos(th).^2 + (z * sin(th) - x).^2));    % Straightforward form
-    rho = sqrt(x.^2 + z.^2 - 2*x.*z.*sin(th(ii)));  % Numerically simpler form
-    hfKernel = exp(1i*k*rho) ./ rho; % Huygens-Fresnel propagation kernel
+    
+    % Select rho based on farfield
+    if ~plane
+        % Far field is the surface of a circle at z distance from origin
+        % rho = sqrt((z^2 * cos(th).^2 + (z * sin(th) - x).^2));    % Straightforward form
+        rho = sqrt(x.^2 + z.^2 - 2*x.*z.*sin(th(ii)));  % Numerically simpler form
+    else
+        % Far field is a plane at z
+        rho = sqrt((x-th(ii)).^2 + z.^2);
+    end
+    
+    % Define and apply Huygens-Fresnel propagation kernel
+    hfKernel = exp(1i*k*rho) ./ rho;
     Ez(ii) = sqrt(1i/lambda) * sum(E0 .* hfKernel .* elementFactor(ii), 1);
 end
 Ez = gather(Ez);
@@ -166,8 +180,10 @@ Ez = gather(Ez);
 if reverse; [x, th] = deal(th, x); end
 
 % Unit transformations
-Ez = Ez * z / 2;    % Change to V/rad instead of V/m, including integration over 
-                    %   the other angular dimension (4π steradian -> 2π rad)
+if ~plane
+    Ez = Ez * z / 2;    % Change to V/rad instead of V/m, including integration over 
+                        %   the other angular dimension (4π steradian -> 2π rad)
+end
 
 % P0 = C0*sum(abs(E0).^2);
 % Pz = C0*trapz(th, abs(Ez).^2);
