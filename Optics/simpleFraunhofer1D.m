@@ -125,7 +125,7 @@ end
 thMax = asin(lambda / dx / 2);
 
 % Subsample nearfield as needed to fully cover desired farfield
-if thMax < max(abs(th))
+if abs(thMax - max(abs(th)))/thMax > 0.05
     % Use integer multiples of original coordinates only for ideal subsampling
     upN = ceil(max(abs(th)) / thMax);
     xN = linspace(min(x), max(x), numel(x)*upN)';
