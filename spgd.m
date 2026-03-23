@@ -216,7 +216,7 @@ end
 dJ = diff([J; J(1)]);
 
 while i <= iter
-    % Define circular indicies
+    % Define circular indices
     i0 = mod(i-2, Nh)+1;    % Previous iteration
     i1 = mod(i-1, Nh)+1;    % This iteration
     i2 = mod(i-0, Nh)+1;    % Next iteration
