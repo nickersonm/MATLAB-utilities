@@ -143,8 +143,8 @@ if any(isnan(th)) || (max(th) == thMax && min(th) == thMax && numel(th) == N)
     upN = 1;
 else
     % Other cases: make sure the minimum resolution is met
-    upN = max([1 ceil(thMax/N / min(diff(th)))]);
-    if upN > 1 && upN < 5; upN = 2*upN; end    % Oversampled for later interpolation
+    upN = max([1 ceil(2*thMax/N / min(diff(th)))]);
+    if upN > 1 && upN < 4; upN = 2*upN; end    % Oversampled for later interpolation
     resample = true;    % Only looking at a subset of the desired angle here; resample for return
 end
 
