@@ -38,7 +38,7 @@ plot(thHF*180/pi, 10*log10(abs(EzHF).^2), "--", "LineWidth", 2);
 ll = ["Fraunhofer FFT", "Huygens-Fresnel"];
 hold off; grid on; axis tight;
 xlabel("Angle [°]");
-ylabel("Intensity [dB]");
+ylabel("Amplitude [dB]");
 legend(ll, "Location", "nw");
 title(h, "Forward", "FontSize", 14);
 
@@ -50,7 +50,7 @@ plot(x, ones(size(E0)) * mean(10*log10(abs(E0HF).^2)), "LineWidth", 2);
 ll = ["Fraunhofer FFT", "Huygens-Fresnel", "Original (not scaled)"];
 hold off; grid on; axis tight;
 xlabel("Position [m]");
-ylabel("Intensity [dB]");
+ylabel("Amplitude [dB]");
 legend(ll, "Location", "s");
 title(h, "Backward", "FontSize", 14);
 

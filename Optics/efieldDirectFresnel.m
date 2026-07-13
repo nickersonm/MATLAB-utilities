@@ -6,7 +6,7 @@
 % 
 % Usage: [Ez, xz, yz] = efieldDirectFresnel(x, y, z, Ei[, option, value])
 %   Returns:
-%     Ez: Complex field amplitude matrix at z
+%     Ez: Complex field amplitude density matrix at z
 %     xz: x-grid at z
 %     yz: y-grid at z
 %
@@ -58,6 +58,10 @@ for i = 1:2:length(varargin)
         case 'k'
             k = double(argval);
             lambda = 2*pi/k;
+        otherwise
+            if ~isempty(arg)
+                warning('Unexpected option "%s", ignoring', num2str(arg));
+            end
     end
 end
 
@@ -113,7 +117,7 @@ if ~isnan(figN)
     figureSize(figN, 1200, 800);
     h = subplot(2,2,1);
     imagesc(x,y, abs(Ei).^2); axis image xy; colorbar;
-    title(h, 'Ei Amplitude', 'FontSize', 14);
+    title(h, 'Ei Amplitude Density', 'FontSize', 14);
     
     h = subplot(2,2,3);
     imagesc(x,y, angle(Ei), 'AlphaData', abs(Ei), 'AlphaDataMapping', 'scaled'); axis image xy; colorbar;
@@ -121,7 +125,7 @@ if ~isnan(figN)
     
     h = subplot(2,2,2);
     imagesc(x,y, abs(Ez).^2); axis image xy; colorbar;
-    title(h, 'Ez Amplitude', 'FontSize', 14);
+    title(h, 'Ez Amplitude Density', 'FontSize', 14);
     
     h = subplot(2,2,4);
     imagesc(x,y, angle(Ez), 'AlphaData', abs(Ez), 'AlphaDataMapping', 'scaled'); axis image xy; colorbar;

@@ -103,7 +103,7 @@ else
     elseif collapseD == 1
         y = mean(y);
     else
-        error("Unknown 'collpaseD'!");
+        error("Unknown 'collapseD'!");
     end
 end
 

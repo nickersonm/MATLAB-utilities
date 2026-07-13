@@ -3,7 +3,7 @@
 %   Implements method from https://doi.org/10.1364/OE.23.026853 (Section 3)
 %   This essentially treats each grid-box as a rect source and sums the
 %       propagated fields; similar to EfieldGaussianBeam
-%   Slightly modified to treat field intensity instead of field, to allow
+%   Slightly modified to treat field amplitude density instead of field, to allow
 %       for resolution and scale independence
 %   Slightly slower than direct Fresnel FFT, but higher accuracy
 % 
@@ -12,7 +12,7 @@
 % 
 % Usage: [Ez, xz, yz, Ei, x, y] = efieldMeanKernel(x, y, z, Ei[, option, value])
 %   Returns:
-%     Ez: Complex field INTENSITY matrix at z
+%     Ez: Complex field AMPLITUDE DENSITY matrix at z
 %     xz: x-grid at z
 %     yz: y-grid at z
 %     Ei: utilized input field
@@ -23,7 +23,7 @@
 %     x, y: Input axes: range, vector, or meshgrid
 %         If size doesn't match Ei, generates based on range
 %     z: Scalar distance to propagate
-%     Ei: Initial complex field INTENSITY matrix
+%     Ei: Initial complex field AMPLITUDE DENSITY matrix
 %
 %     Options:
 %       'plot', %i: Plot abs(E)^2 and angle(E) in specified figure
@@ -42,7 +42,7 @@
 %       x Allow 1D z-coordinate inputs
 %   x Modernize input handling
 %   - Speed up
-%   - Fix field vs. intensity confusion
+%   - Fix field vs. aplitude confusion
 %   - Auto-split into reasonably sized subarrays when input exceeds memory
 %   - Implement general EMA (section 2) for arbitrary ABCD transforms?
 
@@ -219,10 +219,10 @@ Ez = transpose(Hy) * Ei * Hx;   % Note: ' is conjugate transpose!
 
 % Validity check
 if valcheck
-    % TODO: This doesn't scale properly due to field vs intensity mismatch;
+    % TODO: This doesn't scale properly due to field vs amplitude density mismatch;
     % should eventually figure out solution!
 %     Ei = Ei - conj(Hy) * Ez * Hx';
-    Ei = Ei - efieldMeanKernel(xz, yz, -z, Ez, 'xz', x, 'yz', y);
+    Ei = Ei - efieldMeanKernel(xz, yz, -z, Ez, 'xz', x, 'yz', y, "lambda", lambda);
 end
 
 
@@ -235,11 +235,11 @@ if ~isnan(figN)
     
     h = subplot_tight(m,2,1, mgn);
     surf(x,y, abs(Ei).^2); shading flat; axis tight; view(2); colorbar;
-    title(h, 'Ei Intensity', 'FontSize', 14);
+    title(h, 'Ei Amplitude Density', 'FontSize', 14);
     
     h = subplot_tight(m,2,2, mgn);
     surf(xz,yz, abs(Ez).^2); shading flat; axis tight; view(2); colorbar;
-    title(h, 'Ez Intensity', 'FontSize', 14);
+    title(h, 'Ez Amplitude Density', 'FontSize', 14);
     
     if m > 1
         h = subplot_tight(m,2,3, mgn);

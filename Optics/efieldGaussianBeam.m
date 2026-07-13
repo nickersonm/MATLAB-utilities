@@ -1,13 +1,13 @@
 %% efieldGaussianBeam.m
 %   Michael Nickerson 2018-09-14, last updated 2026-07-13
-%   Calculates the E-field amplitude for arbitrary gaussian beam sources
+%   Calculates the E-field amplitude density for arbitrary gaussian beam sources
 % 
 % Requirements:
 %   - None
 % 
 % Usage: [E, x, y] = efieldGaussianBeam(x, y, sources[, option, value])
 %   Returns:
-%     E: Complex field AMPLITUDE matrix
+%     E: Complex field AMPLITUDE DENSITY matrix
 %     x: x-grid
 %     y: y-grid
 %
@@ -67,6 +67,10 @@ for i = 1:2:length(varargin)
             k=2*pi/lambda;
         case 'k'
             k = double(argval);
+        otherwise
+            if ~isempty(arg)
+                warning('Unexpected option "%s", ignoring', num2str(arg));
+            end
     end
 end
 
@@ -133,7 +137,7 @@ if ~isnan(figN)
     figureSize(figN, 1200, 500);
     h = subplot(1,2,1);
     imagesc([min(x(:)) max(x(:))],[min(y(:)) max(y(:))], abs(E).^2); axis image xy; colorbar;
-    title(h, 'Amplitude', 'FontSize', 14);
+    title(h, 'Amplitude Density', 'FontSize', 14);
     
     h = subplot(1,2,2);
     imagesc([min(x(:)) max(x(:))],[min(y(:)) max(y(:))], angle(E), 'AlphaData', abs(E), 'AlphaDataMapping', 'scaled'); axis image xy;
