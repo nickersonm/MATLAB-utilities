@@ -53,7 +53,7 @@ while ~isempty(varargin)
     % Look for valid arguments
     switch arg
         case {'collapse', 'reverse'}
-            collapseD = find(size(E) == 2);
+            collapseD = find(size(E) == 2, 1, 'first');
         case {'collapsed', 'dim'}
             collapseD = round(nextarg("collapse dimension"));
         otherwise

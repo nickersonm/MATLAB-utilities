@@ -13,7 +13,7 @@
 %     Options:
 %       'th', double: Specify output angle vector, either as grid, bounds, or span (default determined by x)
 %       'N', %i: Regenerate grid via linspace(min(th),max(th),N) and resample (default 2^12)
-%       'lambda', %f: Specify wavelength (default 1.55e-6)
+%       'lambda', %f: Specify wavelength (default 1.5e-6)
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %       'reverse': Treat inputs as far-field plane and outputs as nearfield
 %       'elementfactor' | 'ef', [%f]: vector of element factor scaling, corresponding to 'th' grid
@@ -30,9 +30,9 @@
 
 function [Ez, th, E0, x] = simpleFraunhofer1D(x, E0, varargin)
 %% Defaults and magic numbers
-N = 2^12;
+N = NaN;
 th = NaN;
-lambda = 1.55e-6;
+lambda = 1.5e-6;
 reverse = false;
 ef = NaN;
 resample = false;
@@ -80,7 +80,9 @@ while ~isempty(varargin)
     end
 end
 
-% Verify and standardize inputs
+
+%% Verify and standardize inputs
+if isnan(N); N = 2^12; end
 if numel(th) < 2
     th = [-th/2, th/2];
 end
@@ -95,7 +97,7 @@ th = th(:);
 
 x = x(:);
 E0 = E0(:);
-if size(x) ~= size(E0)
+if numel(x) ~= numel(E0)
     error("x vector and E0 vector size mismatch!");
 end
 

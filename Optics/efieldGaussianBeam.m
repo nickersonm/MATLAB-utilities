@@ -1,13 +1,13 @@
 %% efieldGaussianBeam.m
-%   Michael Nickerson 2018-09-14, last updated 2025-04-21
-%   Calculates the E-field intensity for arbitrary gaussian beam sources
+%   Michael Nickerson 2018-09-14, last updated 2026-07-13
+%   Calculates the E-field amplitude for arbitrary gaussian beam sources
 % 
 % Requirements:
 %   - None
 % 
 % Usage: [E, x, y] = efieldGaussianBeam(x, y, sources[, option, value])
 %   Returns:
-%     E: Complex field INTENSITY matrix
+%     E: Complex field AMPLITUDE matrix
 %     x: x-grid
 %     y: y-grid
 %
@@ -16,7 +16,7 @@
 %           If <= 2 elements or 'N' specified, generates grid
 %     sources: Mx(3|4) array of source parameters: [x, y, q[, phi, E0]]
 %           Optional 'phi' column is per-source phase
-%           Optional 'E0' column is per-source relative intensity
+%           Optional 'E0' column is per-source relative amplitude
 %
 %     Options:
 %       'plot', %i: Plot abs(E)^2 and angle(E) in specified figure
@@ -72,7 +72,7 @@ end
 
 
 %% Helper functions
-Erq = @(r, q) conj((1-real(q)/q) * exp(-1i*k*(real(q) + r.^2/(2*q)) )); % Experimentally needs the conujgate
+Erq = @(r, q) conj((1-real(q)/q) * exp(-1i*k*(real(q) + r.^2/(2*q)) )); % Experimentally needs the conjugate
 r = @(x,y) sqrt(x.^2+y.^2);
 
 
@@ -94,7 +94,7 @@ if size(sources,2) < 4
     sources = [sources zeros(size(sources,1),1)]; % Zero per-source phase
 end
 if size(sources,2) < 5
-    sources = [sources ones(size(sources,1),1)]; % Equal starting intensity
+    sources = [sources ones(size(sources,1),1)]; % Equal starting amplitude
 end
 
 % Standardize grid inputs
@@ -118,7 +118,7 @@ N(1) = numel(x); N(2) = numel(y);
 
 
 %% Calculate E fields
-E = zeros(N(1), N(2));
+E = zeros(N(2), N(1));
 for i=1:size(sources,1)
     E = E + sources(i,5)*Erq(r(x-sources(i,1), y-sources(i,2)), sources(i,3)).*exp(1i*sources(i,4));
 end
@@ -133,7 +133,7 @@ if ~isnan(figN)
     figureSize(figN, 1200, 500);
     h = subplot(1,2,1);
     imagesc([min(x(:)) max(x(:))],[min(y(:)) max(y(:))], abs(E).^2); axis image xy; colorbar;
-    title(h, 'Intensity', 'FontSize', 14);
+    title(h, 'Amplitude', 'FontSize', 14);
     
     h = subplot(1,2,2);
     imagesc([min(x(:)) max(x(:))],[min(y(:)) max(y(:))], angle(E), 'AlphaData', abs(E), 'AlphaDataMapping', 'scaled'); axis image xy;

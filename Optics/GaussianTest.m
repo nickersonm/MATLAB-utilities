@@ -35,7 +35,7 @@ zR = pi*w0^2/lambda;
 % Via complex parameter
 q0 = 1i*zR;
 qz = @(qi, z) qi + z;
-Erq = @(r, q) (1-real(q)/q) * exp(-1i*k*(real(q) + r.^2/(2*q)) );
+Erq = @(r, q) conj((1-real(q)/q) * exp(-1i*k*(real(q) + r.^2/(2*q)) ));
 r = @(x,y) sqrt(x.^2+y.^2);
 
 

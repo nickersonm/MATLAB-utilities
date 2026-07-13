@@ -14,7 +14,7 @@
 %       'z', %f: propagation distance (default 100)
 %       'th', %f: Specify output angle vector, either as grid, bounds, or span (default pi)
 %       'N', %i: Generate grid via linspace(min(th),max(th),N) if numel(th)<3 (default 2^12)
-%       'lambda', %f: Specify wavelength (default 1.55e-6)
+%       'lambda', %f: Specify wavelength (default 1.5e-6)
 %       'k', %f: Specify wavenumber (default 2*pi/lambda)
 %       'reverse': Treat inputs as far-field plane and outputs as nearfield
 %       'elementfactor' | 'ef', [%f]: vector of element factor scaling, corresponding to 'th' grid
@@ -36,7 +36,7 @@ function [Ez, th, E0, x, ef] = simpleHuygensFresnel1D(x, E0, varargin)
 z = 100;
 N = NaN;
 th = pi;
-lambda = 1.55e-6;     k=2*pi/lambda;
+lambda = 1.5e-6;     k=2*pi/lambda;
 reverse = false;
 plane = false;
 ef = NaN;
@@ -117,7 +117,7 @@ th = th(:)';
 
 x = x(:);
 E0 = E0(:);
-if size(x) ~= size(E0)
+if numel(x) ~= numel(E0)
     error("x vector and E0 vector size mismatch!");
 end
 
