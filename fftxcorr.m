@@ -13,10 +13,10 @@ function r = fftxcorr(x, y, maxlag)
     if exist('maxlag', 'var')
         maxlag = (maxlag-1)*(numel(x)>1) + 1;  % Make correct dimensions
     else
-        maxlag = max(numel(x), numel(y)) - 1;
+        maxlag = max(size(x), size(y)) - 1;
     end
     
-    n = max([maxlag+(numel(x)>1) ; numel(x) ; numel(y)]);
+    n = max([maxlag+(size(x)>1) ; size(x) ; size(y)]);
     n = (2*n-2).*(n>1) + 1;
     
     r = fftshift(ifftn( fftn(x, n) .* conj(fftn(y, n)) ));

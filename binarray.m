@@ -9,11 +9,10 @@ function x = binarray(x, n, fun)
     N = 1;
     % Set default for 'fun' input
     if ~exist('fun', 'var')
+        fun = @mean;
         if isgpuarray(x)
             fun = @sum;
             N = n;
-        else
-            fun = @mean;
         end
     end
     

@@ -7,7 +7,7 @@ function w = fftconv(u, v, shape)
         shape = 'full';
     end
     
-    n = 2*max(numel(u), numel(v)) - 1;
+    n = 2*max(size(u), size(v)) - 1;
     w = ifftn( fftn(u, n) .* fftn(v, n) );
     
     if strcmpi(shape, 'same')
