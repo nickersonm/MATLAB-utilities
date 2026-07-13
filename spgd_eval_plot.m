@@ -30,8 +30,8 @@ end
 
 % Accept a struct.option = value structure
 if numel(varargin) > 0 && isstruct(varargin{1})
-    coefftruct = varargin{1}; varargin(1) = [];
-    varargin = [reshape([fieldnames(coefftruct) struct2cell(coefftruct)]', 1, []), varargin];
+    paramStruct = varargin{1}; varargin(1) = [];
+    varargin = [reshape([fieldnames(paramStruct) struct2cell(paramStruct)]', 1, []), varargin];
 end
 
 % Parameter parsing

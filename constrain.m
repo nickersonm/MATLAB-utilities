@@ -7,7 +7,7 @@ function xp = constrain(x, low, high, alpha)
         high = 1;
     end
     if ~exist('low', 'var')
-        low = 1;
+        low = -1;
     end
     
     ldim = find(size(low) == min(size(low)), 1);

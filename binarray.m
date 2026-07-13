@@ -18,7 +18,7 @@ function x = binarray(x, n, fun)
     end
     
     % Create bins
-    bins = reshape(repmat(1:ceil(numel(x)/n), n, 1), [], 1);
+    bins = reshape(repmat(ceil((1:numel(x))/n), n, 1), [], 1);
     bins = bins(1:numel(x));
     
     % Select the minimum from each coordinate

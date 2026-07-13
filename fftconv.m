@@ -7,11 +7,11 @@ function w = fftconv(u, v, shape)
         shape = 'full';
     end
     
-    n = 2*max(size(u), size(v)) - 1;
+    n = 2*max(numel(u), numel(v)) - 1;
     w = ifftn( fftn(u, n) .* fftn(v, n) );
     
     if strcmpi(shape, 'same')
-        % TODO: Impove this logic
+        % TODO: Improve this logic
         inds = cell(size(size(w)));
         for i = 1:numel(size(w))
             inds{i} = floor( size(u,i)/2+1 ):floor( 3*size(u,i)/2 );

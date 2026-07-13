@@ -1,7 +1,7 @@
 % Use ImageMagick to create an animated gif
 function magickgif(imgarray, outFile, varargin)
     delay = 100/4;
-    if ~isempty(varargin) > 0
+    if ~isempty(varargin)
         delay = 100/varargin{1};    % FPS input
     end
     

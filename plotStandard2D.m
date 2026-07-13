@@ -319,7 +319,7 @@ if addData ~= 1
     set(axH, "NextPlot", "add");
     set(axH(2:end), "Color", "none");
 else
-    % Retreive existing axes and sort to expected order
+    % Retrieve existing axes and sort to expected order
     axH = figH.Children;
     axH = axH(strcmpi(get(axH, "type"), "axes"));
     [~,axI] = sort([axH.Tag]);
@@ -344,7 +344,7 @@ allAxes = sub2ind([2, 2], allAxes(:,1), allAxes(:,2));
 %   Axis vector is [x1y1, x2y1, x1y2, x2y2]
 set(axH([2,3]), "Visible", "off");
 xlabel(axH(1), xLa, "FontSize", axFS, "FontName", axF, "Interpreter", interpreter, "FontWeight", axFW);
-ylabel(axH(1), yLa, "FontSize", axFS, "FontName", axF, "Interpreter", interpreter, "FontWEight", axFW);
+ylabel(axH(1), yLa, "FontSize", axFS, "FontName", axF, "Interpreter", interpreter, "FontWeight", axFW);
 if any( sum(allAxes == [2,4], 2) ) % X2 exists
     xlabel(axH(4), x2La, "FontSize", axFS, "FontName", axF, "Interpreter", interpreter, "FontWeight", axFW);
 else

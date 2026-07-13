@@ -62,8 +62,8 @@ end
 
 % Accept a struct.option = value structure
 if numel(varargin) > 0 && isstruct(varargin{1})
-    coefftruct = varargin{1}; varargin(1) = [];
-    varargin = [reshape([fieldnames(coefftruct) struct2cell(coefftruct)]', 1, []), varargin];
+    paramStruct = varargin{1}; varargin(1) = [];
+    varargin = [reshape([fieldnames(paramStruct) struct2cell(paramStruct)]', 1, []), varargin];
 end
 
 % Parameter parsing
@@ -78,7 +78,7 @@ while ~isempty(varargin)
         case {'stop', 'thresh', 'threshold'}
             stop = double(nextarg('stop'));
         case {'gamma', 'gain'}
-            gamma = double(nextarg('beta'));
+            gamma = double(nextarg('gamma'));
         case {'clow', 'low', 'lowlimit'}
             clow = double(nextarg('coeff low limits'));
         case {'clim', 'high', 'chigh', 'limit', 'limits', 'coefflim'}
@@ -88,7 +88,7 @@ while ~isempty(varargin)
         case {'gleak', 'leak'}
             gleak = double(nextarg('leakage coefficient'));
         case 'callback'
-            callback = nextarg('beta');
+            callback = nextarg('callback');
             if ~isa(callback, "function_handle")
                 error('"callback" is not a valid function_handle');
             end

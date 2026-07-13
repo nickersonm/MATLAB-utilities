@@ -87,7 +87,7 @@ dataOut1 = mean(requiredIn);
 
 
 %% Analyze stuff
-dataOut2 = 1./dataout1;
+dataOut2 = 1./dataOut1;
 
 
 end

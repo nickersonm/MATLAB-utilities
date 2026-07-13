@@ -15,7 +15,7 @@ function plotDualSurf(x,y,z, num, title, xla, yla, zla)
 
     % Build title axes and title.
     axes('Position', [0, 1, 1, 0.05], 'Visible', 'off' ) ;
-    text(0.5, -0.25, title, 'FontSize', 14', 'FontWeight', 'Bold', 'VerticalAlignment', 'Top', 'HorizontalAlignment', 'Center' ) ;
+    text(0.5, -0.25, title, 'FontSize', '14', 'FontWeight', 'Bold', 'VerticalAlignment', 'Top', 'HorizontalAlignment', 'Center' ) ;
 
     drawnow;    % Immediate display
 end

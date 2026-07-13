@@ -2,6 +2,7 @@
 % Michael Nickerson 2022
 function S1 = appendstruct(S1, S2)
     if ~isstruct(S1) || ~isstruct(S2)
+        warning("Inputs must be structures.");
         return;
     end
     
